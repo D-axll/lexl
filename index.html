@@ -1,4 +1,4 @@
-<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>LEXL – Träningslogg PWA beta 0.11.0</title><link rel="manifest" href="./manifest.webmanifest"><meta name="theme-color" content="#001c16"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><style>
+<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>LEXL – Träningslogg PWA beta 0.11.1</title><link rel="manifest" href="./manifest.webmanifest"><meta name="theme-color" content="#001c16"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><style>
 :root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#101419;color:#f1f5f9}*{box-sizing:border-box}body{margin:0 auto;max-width:760px;padding:16px 14px 100px}header{display:flex;align-items:center;justify-content:space-between;margin:8px 0 24px}h1{font-size:26px;margin:0}h2{font-size:21px;margin:0 0 12px}h3{font-size:17px;margin:0}small,.muted{color:#a6b1bd}.card{background:#1b222b;border:1px solid #33404c;border-radius:16px;padding:16px;margin:12px 0}.flex{display:flex;align-items:center;justify-content:space-between;gap:10px}.buttons{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}button,.btn{background:#314253;color:white;border:1px solid #526274;border-radius:11px;padding:11px 13px;font:inherit;cursor:pointer}button.primary{background:#36a77b;color:#061c15;border-color:#36a77b;font-weight:750}button.danger{background:#532d37;border-color:#764552}button:disabled{opacity:.4}input,select,textarea{background:#101820;color:white;border:1px solid #53616e;border-radius:9px;padding:10px;font:inherit;min-width:0;width:100%}label{display:block;color:#aab6c4;font-size:12px;margin:10px 0 5px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}.setrow{display:grid;grid-template-columns:35px 1fr 1fr 46px;gap:8px;align-items:center;margin:9px 0}.setrow.done{opacity:.6}.setrow.done input{border-color:#36a77b}.tabs{display:flex;gap:8px;margin:18px 0}.tabs button{flex:1;font-size:13px;padding:10px 4px}.active{outline:2px solid #36a77b}.reference{width:100%;border-radius:9px;margin:8px 0}.hint{background:#1e302b;border-left:3px solid #36a77b;padding:12px;border-radius:8px;color:#d8efe6;margin:12px 0}.right{text-align:right}.divider{border-top:1px solid #36434e;margin:15px 0}.pill{font-size:12px;color:#b5c3ce}a{color:#8edac0} .mini{font-size:13px;padding:7px 9px} .exercise-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.warm{border-left:3px solid #eabf6b}.circle{border-left:4px solid #36a77b}.progress{font-size:12px;color:#8edac0;margin-top:5px}.subtle{font-size:12px;color:#a6b1bd}.setrow input[type=checkbox]{width:22px;height:22px}.modal{position:fixed;inset:0;background:#000d;z-index:20;display:flex;align-items:center;justify-content:center;padding:12px}.modal-inner{background:#1b222b;border:1px solid #53616e;border-radius:16px;padding:15px;max-width:650px;width:100%;max-height:92vh;overflow:auto}.modal img{width:100%;border-radius:8px;margin:8px 0}.modal .buttons{position:sticky;top:-15px;background:#1b222b;padding:8px 0}.sticky-return{position:sticky;top:4px;z-index:5;background:#263a36;border-color:#36a77b;width:100%;margin:6px 0 12px}textarea{resize:vertical}
 :root{--scale:1}body{font-size:calc(16px * var(--scale))}h1{font-size:1.65em}h2{font-size:1.35em}h3{font-size:1.1em}label,.progress,.pill,.subtle{font-size:.84em}small,.muted{font-size:.9em}.mini,.tabs button{font-size:.86em}button,input,select,textarea{font-size:1em;min-height:43px}.setrow{grid-template-columns:minmax(28px,.45fr) minmax(0,1.1fr) minmax(0,1.1fr) minmax(32px,.5fr)}.setrow input{padding:9px 5px}.progress{margin:2px 0 13px 10%;min-height:1em}.timer-live{font-size:1.75em;font-weight:800;font-variant-numeric:tabular-nums;color:#8edac0}.font-settings{display:flex;flex-direction:column;gap:8px}.font-settings input{width:100%}.font-settings .ends{display:flex;justify-content:space-between;color:#a6b1bd;font-size:.8em}.alt-panel{border-top:1px solid #465564;margin-top:14px;padding-top:12px}.alt-panel img{width:100%;border-radius:9px;margin-top:8px} 
 
@@ -244,7 +244,7 @@ body:not(.on-home) .divider{border-color:#245543}
 :root[data-theme="light"] .lexl-history-back{background:#e8f7ee!important;color:#174f39!important;border-color:#b8dcc7!important}
 :root[data-theme="light"] .lexl-history-actions .lexl-history-delete{background:#fff0f0!important;color:#983d45!important;border-color:#dba5a8!important}
 
-/* beta 0.11.0 – tydligare och unika programikoner */
+/* beta 0.11.1 – tydligare och unika programikoner */
 .lexl-program-view .lexl-icon{width:18px;height:18px;display:inline-block;vertical-align:-.24em;flex:none;stroke-width:1.9}
 .lexl-program-view .lexl-program-metrics span,.lexl-program-view .lexl-exercise-tags span{display:inline-flex;align-items:center;gap:5px}
 .lexl-program-view .lexl-program-metrics .lexl-icon{width:16px;height:16px}
@@ -256,7 +256,7 @@ body:not(.on-home) .divider{border-color:#245543}
 .lexl-program-view .lexl-instruction-toggle>.lexl-chevron{margin-left:auto;display:inline-flex;align-items:center}
 .lexl-program-view .lexl-instruction-toggle .lexl-icon{width:19px;height:19px}
 
-/* beta 0.11.0: same readable icon scale as history; no duplicate pseudo-icon */
+/* beta 0.11.1: same readable icon scale as history; no duplicate pseudo-icon */
 .lexl-program-view .lexl-exercise-tags .lexl-icon{width:20px!important;height:20px!important;stroke-width:1.9!important;flex-shrink:0}
 .lexl-program-view .lexl-program-metrics .lexl-icon{width:20px!important;height:20px!important;stroke-width:1.9!important}
 .lexl-program-view .lexl-exercise-tags span{gap:7px!important;min-height:34px;white-space:nowrap}
@@ -264,7 +264,7 @@ body:not(.on-home) .divider{border-color:#245543}
 .lexl-program-view .lexl-instruction-toggle>.lexl-icon{width:21px!important;height:21px!important;flex-shrink:0}
 @media(max-width:390px){.lexl-program-view .lexl-exercise-tags .lexl-icon{width:18px!important;height:18px!important}.lexl-program-view .lexl-exercise-tags span{gap:5px!important}}
 
-/* beta 0.11.0 – fixed-width SVG chevrons, consistent instruction buttons */
+/* beta 0.11.1 – fixed-width SVG chevrons, consistent instruction buttons */
 .lexl-program-view .lexl-expand-all{display:inline-flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;min-height:44px!important;padding:10px 13px!important;border-radius:13px!important;border:1px solid #198c6d!important;background:#063a2d!important;color:#d6ffeb!important;font-size:.79em!important;font-weight:700!important;white-space:nowrap!important;line-height:1.2!important;box-shadow:none!important}
 .lexl-program-view .lexl-expand-label{display:block;white-space:nowrap}
 .lexl-program-view .lexl-chevron{display:inline-flex!important;align-items:center;justify-content:center;width:22px!important;height:22px!important;min-width:22px!important;flex:0 0 22px!important;margin-left:0!important}
@@ -274,7 +274,7 @@ body:not(.on-home) .divider{border-color:#245543}
 .lexl-program-view .lexl-instruction-toggle[aria-expanded="true"] .lexl-icon:last-child{transform:rotate(90deg)}
 @media(prefers-reduced-motion:reduce){.lexl-program-view .lexl-chevron .lexl-icon,.lexl-program-view .lexl-instruction-toggle .lexl-icon:last-child{transition:none}}
 
-/* beta 0.11.0 – program overview icons aligned with history and navigation */
+/* beta 0.11.1 – program overview icons aligned with history and navigation */
 .lexl-program-view .lexl-program-metrics>span{display:inline-flex;align-items:center;gap:8px;min-height:43px;padding:8px 12px;font-size:.82em;line-height:1.2}
 .lexl-program-view .lexl-program-metrics>span>.lexl-icon{width:23px!important;height:23px!important;stroke-width:1.9!important;vertical-align:middle}
 .lexl-program-view .lexl-program-main-action button,.lexl-program-view .lexl-program-secondary button{display:flex;align-items:center;justify-content:center;gap:10px}
@@ -282,7 +282,7 @@ body:not(.on-home) .divider{border-color:#245543}
 .lexl-program-view .lexl-program-secondary button{font-size:.85em;min-height:48px}
 @media(max-width:390px){.lexl-program-view .lexl-program-metrics>span{gap:6px;padding:7px 9px;font-size:.78em}.lexl-program-view .lexl-program-metrics>span>.lexl-icon{width:21px!important;height:21px!important}}
 
-/* beta 0.11.0: single icon system on program page */
+/* beta 0.11.1: single icon system on program page */
 .lexl-program-view .lexl-instruction-toggle{display:flex!important;align-items:center!important;gap:10px!important;width:100%!important}
 .lexl-program-view .lexl-instruction-toggle>.lexl-icon{width:22px!important;height:22px!important;flex:none}
 .lexl-program-view .lexl-instruction-toggle>.lexl-instruction-label{flex:1;text-align:left}
@@ -290,7 +290,7 @@ body:not(.on-home) .divider{border-color:#245543}
 .lexl-program-view .lexl-instruction-toggle>.lexl-chevron .lexl-icon{width:22px!important;height:22px!important}
 .lexl-program-view .lexl-program-metrics .lexl-icon,.lexl-program-view .lexl-exercise-tags .lexl-icon{stroke-width:1.9!important}
 
-/* beta 0.11.0 – bildfria programkort med större tydligare ikoner */
+/* beta 0.11.1 – bildfria programkort med större tydligare ikoner */
 .lexl-program-view .lexl-exercise-summary{grid-template-columns:42px minmax(0,1fr)!important;gap:12px!important;align-items:start!important}
 .lexl-program-view .lexl-exercise-number{height:43px!important;min-width:42px!important}
 .lexl-program-view .lexl-exercise-body h3{font-size:clamp(1em,4vw,1.15em)!important;line-height:1.3!important;margin:2px 0 12px!important}
@@ -314,7 +314,7 @@ body:not(.on-home) .divider{border-color:#245543}
 .lexl-edit-actions button{width:auto!important;min-width:44px;min-height:44px;padding:9px 12px!important;border-radius:12px!important}
 /* repeat stepper: touch-friendly with a readable numeric input */
 
-/* LEXL 0.11.0: edit screen and touch/mouse reorder */
+/* LEXL 0.11.1: edit screen and touch/mouse reorder */
 .lexl-edit-sortbar{position:sticky;top:0;z-index:8;padding:12px;border:1px solid #27634e;border-radius:16px;background:#0b2c23;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin:14px 0}
 .lexl-edit-save-actions,.lexl-sort-actions,.lexl-edit-footer-secondary{display:flex;align-items:center;gap:8px}
 .lexl-edit-save-actions button{min-height:43px;padding:9px 14px}
@@ -420,7 +420,7 @@ function lexlBottomNav(active){return `<nav class="lexl-shared-bottom" aria-labe
 function openProgramNav(){const p=state.programs.find(x=>x.id===selected)||state.programs[0];if(p)go('program',p.id);else go('home')}
 function openTrainingNav(){if(state.draft)go('workout');else {go('home');window.scrollTo(0,0)}}
 function navTabs(active){return `<div class="tabs">${button('Program',"go('home')",active==='home'?'active':'')}${button('Historik',"go('history')",active==='history'?'active':'')}</div>`;}
-function settingsView(){return `<h2>⚙ Inställningar</h2><div class="card"><h3>Utseende</h3><p class="muted">Välj ljust, mörkt eller följ telefonens tema.</p><label for="theme-choice">Färgtema</label><select id="theme-choice" onchange="setTheme(this.value)"><option value="system" ${themeChoice==='system'?'selected':''}>Följ telefonens inställning</option><option value="light" ${themeChoice==='light'?'selected':''}>Ljust läge</option><option value="dark" ${themeChoice==='dark'?'selected':''}>Mörkt läge</option></select></div>${fontSettings()}<div class="card"><h3 class="lexl-settings-heading">${lexlIcon('backup')} Säkerhetskopia</h3><p>Program och historik sparas lokalt på denna enhet. Exportera en säkerhetskopia regelbundet och alltid före versionsbyte.</p>${button('Exportera säkerhetskopia (JSON)',"exportData()",'primary')}<label>Importera säkerhetskopia (ersätter befintliga data)</label><label class="lexl-file-button" for="lexl-import-file">${lexlIcon('upload')} Välj JSON-fil</label><input id="lexl-import-file" class="lexl-hidden-file" type="file" accept=".json,application/json" onchange="importData(this.files[0])"></div><div class="card"><b>Om LEXL – beta 0.11.0</b><p class="muted"><ul class="lexl-about-list"><li>LEXL – EVERY REP COUNTS är en installerbar träningslogg med lokal lagring och offline-stöd.</li><li>Historiken sparas lokalt. Exportera regelbundet en säkerhetskopia.</li><li><strong>Nytt i beta 0.11.0:</strong> ändrad övningsordning följer även pågående pass; repetitioner kopieras till följande set; plus/minus för reps borttaget.</li><li>Vikt räknas som kg × repetitioner för genomförda set med registrerade värden. Kombinationsövningars registrerade vikter summeras.</li><li>Synkronisering mellan enheter ingår ännu inte.</li></ul></p></div>`;}
+function settingsView(){return `<h2>⚙ Inställningar</h2><div class="card"><h3>Utseende</h3><p class="muted">Välj ljust, mörkt eller följ telefonens tema.</p><label for="theme-choice">Färgtema</label><select id="theme-choice" onchange="setTheme(this.value)"><option value="system" ${themeChoice==='system'?'selected':''}>Följ telefonens inställning</option><option value="light" ${themeChoice==='light'?'selected':''}>Ljust läge</option><option value="dark" ${themeChoice==='dark'?'selected':''}>Mörkt läge</option></select></div>${fontSettings()}<div class="card"><h3 class="lexl-settings-heading">${lexlIcon('backup')} Säkerhetskopia</h3><p>Program och historik sparas lokalt på denna enhet. Exportera en säkerhetskopia regelbundet och alltid före versionsbyte.</p>${button('Exportera säkerhetskopia (JSON)',"exportData()",'primary')}<label>Importera säkerhetskopia (ersätter befintliga data)</label><label class="lexl-file-button" for="lexl-import-file">${lexlIcon('upload')} Välj JSON-fil</label><input id="lexl-import-file" class="lexl-hidden-file" type="file" accept=".json,application/json" onchange="importData(this.files[0])"></div><div class="card"><b>Om LEXL – beta 0.11.1</b><p class="muted"><ul class="lexl-about-list"><li>LEXL – EVERY REP COUNTS är en installerbar träningslogg med lokal lagring och offline-stöd.</li><li>Historiken sparas lokalt. Exportera regelbundet en säkerhetskopia.</li><li><strong>Nytt i beta 0.11.1:</strong> ändrad övningsordning följer även pågående pass; repetitioner kopieras till följande set; plus/minus för reps borttaget.</li><li>Vikt räknas som kg × repetitioner för genomförda set med registrerade värden. Kombinationsövningars registrerade vikter summeras.</li><li>Synkronisering mellan enheter ingår ännu inte.</li></ul></p></div>`;}
 const clone=x=>JSON.parse(JSON.stringify(x));let state;try{state=JSON.parse(localStorage.getItem(K))}catch{}if(!state||!Array.isArray(state.programs))state={programs:clone(ORIGINAL),history:[],draft:null};
 // Bevara historik. Migrera endast originalprogrammets två felaktigt uppdelade övningar.
 function migrateCombo(data){
@@ -562,11 +562,44 @@ function refreshExerciseOrderButtons(){const dirty=exerciseOrderDirty();const sa
 function cancelExerciseOrder(id){const p=state.programs.find(x=>x.id===id),list=document.getElementById('lexl-sort-list');if(!p||!list)return;const nodes=new Map([...list.children].map(n=>[n.dataset.exId,n]));p.exercises.forEach(e=>{const n=nodes.get(e.id);if(n)list.appendChild(n)});refreshExerciseOrderButtons()}
 function saveExerciseOrder(id){const p=state.programs.find(x=>x.id===id);if(!p)return;const ids=exerciseOrderIds();if(ids.length!==p.exercises.length||new Set(ids).size!==ids.length||ids.some(x=>!p.exercises.some(e=>e.id===x))){alert('Kunde inte spara ordningen. Försök igen.');return}const map=new Map(p.exercises.map(e=>[e.id,e]));p.exercises=ids.map(x=>map.get(x));syncDraftExerciseOrder(p);save();render();const status=document.getElementById('lexl-order-status');if(status)status.textContent='Ordningen sparad'}
 function leaveEdit(id){go('program',id)}
-function initExerciseDrag(id){const list=document.getElementById('lexl-sort-list');if(!list)return;let drag=null;
- list.querySelectorAll('.lexl-drag-handle').forEach(handle=>handle.addEventListener('pointerdown',ev=>{if(ev.button!==0||drag)return;const card=handle.closest('.lexl-sort-card');if(!card)return;drag={card,pointer:ev.pointerId,startY:ev.clientY};card.classList.add('lexl-dragging');ev.preventDefault()}));
- const move=ev=>{if(!drag||drag.pointer!==ev.pointerId)return;const siblings=[...list.children].filter(n=>n!==drag.card);const next=siblings.find(n=>ev.clientY<n.getBoundingClientRect().top+n.getBoundingClientRect().height/2);if(next)list.insertBefore(drag.card,next);else list.appendChild(drag.card);refreshExerciseOrderButtons();ev.preventDefault()};
- const stop=ev=>{if(!drag||drag.pointer!==ev.pointerId)return;drag.card.classList.remove('lexl-dragging');drag=null;refreshExerciseOrderButtons();document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',stop);document.removeEventListener('pointercancel',stop)};
- list.querySelectorAll('.lexl-drag-handle').forEach(handle=>handle.addEventListener('pointerdown',ev=>{if(drag&&drag.pointer===ev.pointerId){document.addEventListener('pointermove',move,{passive:false});document.addEventListener('pointerup',stop);document.addEventListener('pointercancel',stop)}}));
+function initExerciseDrag(id){
+ const list=document.getElementById('lexl-sort-list');if(!list)return;
+ let active=null;
+ const finish=(ev)=>{
+  if(!active||ev.pointerId!==active.pointerId)return;
+  const {handle,card}=active;
+  card.classList.remove('lexl-dragging');
+  try{if(handle.hasPointerCapture(ev.pointerId))handle.releasePointerCapture(ev.pointerId)}catch(e){}
+  active=null;refreshExerciseOrderButtons();
+ };
+ const move=(ev)=>{
+  if(!active||ev.pointerId!==active.pointerId)return;
+  ev.preventDefault();
+  const card=active.card;
+  const others=[...list.querySelectorAll(':scope > .lexl-sort-card')].filter(n=>n!==card);
+  const before=others.find(n=>ev.clientY<n.getBoundingClientRect().top+n.getBoundingClientRect().height/2);
+  if(before){if(before!==card.nextElementSibling)list.insertBefore(card,before)}
+  else if(card!==list.lastElementChild)list.appendChild(card);
+  const edge=72;
+  if(ev.clientY<edge)window.scrollBy(0,-14);
+  else if(ev.clientY>window.innerHeight-edge)window.scrollBy(0,14);
+  refreshExerciseOrderButtons();
+ };
+ list.querySelectorAll('.lexl-drag-handle').forEach(handle=>{
+  handle.style.touchAction='none';
+  handle.addEventListener('pointerdown',ev=>{
+   if(active||ev.isPrimary===false||(ev.pointerType==='mouse'&&ev.button!==0))return;
+   const card=handle.closest('.lexl-sort-card');if(!card)return;
+   active={card,handle,pointerId:ev.pointerId};
+   card.classList.add('lexl-dragging');
+   try{handle.setPointerCapture(ev.pointerId)}catch(e){}
+   ev.preventDefault();
+  });
+  handle.addEventListener('pointermove',move,{passive:false});
+  handle.addEventListener('pointerup',finish);
+  handle.addEventListener('pointercancel',finish);
+  handle.addEventListener('lostpointercapture',ev=>{if(active&&ev.pointerId===active.pointerId)finish(ev)});
+ });
 }
 function duplicate(id){let p=clone(state.programs.find(x=>x.id===id));p.id=crypto.randomUUID();p.name+=' (kopia)';p.exercises.forEach(e=>e.id=crypto.randomUUID());state.programs.push(p);save();go('edit',p.id)}
 function newProgram(){let p={id:crypto.randomUUID(),name:'Mitt nya pass',type:'vanligt',rounds:1,pages:[],exercises:[]};state.programs.push(p);save();go('edit',p.id)}
