@@ -1,4 +1,4 @@
-<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>LEXL – Träningslogg PWA beta 0.11.5</title><link rel="manifest" href="./manifest.webmanifest"><meta name="theme-color" content="#001c16"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><style>
+<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>LEXL – Träningslogg PWA beta 0.11.6</title><link rel="manifest" href="./manifest.webmanifest"><meta name="theme-color" content="#001c16"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><style>
 :root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#101419;color:#f1f5f9}*{box-sizing:border-box}body{margin:0 auto;max-width:760px;padding:16px 14px 100px}header{display:flex;align-items:center;justify-content:space-between;margin:8px 0 24px}h1{font-size:26px;margin:0}h2{font-size:21px;margin:0 0 12px}h3{font-size:17px;margin:0}small,.muted{color:#a6b1bd}.card{background:#1b222b;border:1px solid #33404c;border-radius:16px;padding:16px;margin:12px 0}.flex{display:flex;align-items:center;justify-content:space-between;gap:10px}.buttons{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}button,.btn{background:#314253;color:white;border:1px solid #526274;border-radius:11px;padding:11px 13px;font:inherit;cursor:pointer}button.primary{background:#36a77b;color:#061c15;border-color:#36a77b;font-weight:750}button.danger{background:#532d37;border-color:#764552}button:disabled{opacity:.4}input,select,textarea{background:#101820;color:white;border:1px solid #53616e;border-radius:9px;padding:10px;font:inherit;min-width:0;width:100%}label{display:block;color:#aab6c4;font-size:12px;margin:10px 0 5px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}.setrow{display:grid;grid-template-columns:35px 1fr 1fr 46px;gap:8px;align-items:center;margin:9px 0}.setrow.done{opacity:.6}.setrow.done input{border-color:#36a77b}.tabs{display:flex;gap:8px;margin:18px 0}.tabs button{flex:1;font-size:13px;padding:10px 4px}.active{outline:2px solid #36a77b}.reference{width:100%;border-radius:9px;margin:8px 0}.hint{background:#1e302b;border-left:3px solid #36a77b;padding:12px;border-radius:8px;color:#d8efe6;margin:12px 0}.right{text-align:right}.divider{border-top:1px solid #36434e;margin:15px 0}.pill{font-size:12px;color:#b5c3ce}a{color:#8edac0} .mini{font-size:13px;padding:7px 9px} .exercise-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.warm{border-left:3px solid #eabf6b}.circle{border-left:4px solid #36a77b}.progress{font-size:12px;color:#8edac0;margin-top:5px}.subtle{font-size:12px;color:#a6b1bd}.setrow input[type=checkbox]{width:22px;height:22px}.modal{position:fixed;inset:0;background:#000d;z-index:20;display:flex;align-items:center;justify-content:center;padding:12px}.modal-inner{background:#1b222b;border:1px solid #53616e;border-radius:16px;padding:15px;max-width:650px;width:100%;max-height:92vh;overflow:auto}.modal img{width:100%;border-radius:8px;margin:8px 0}.modal .buttons{position:sticky;top:-15px;background:#1b222b;padding:8px 0}.sticky-return{position:sticky;top:4px;z-index:5;background:#263a36;border-color:#36a77b;width:100%;margin:6px 0 12px}textarea{resize:vertical}
 :root{--scale:1}body{font-size:calc(16px * var(--scale))}h1{font-size:1.65em}h2{font-size:1.35em}h3{font-size:1.1em}label,.progress,.pill,.subtle{font-size:.84em}small,.muted{font-size:.9em}.mini,.tabs button{font-size:.86em}button,input,select,textarea{font-size:1em;min-height:43px}.setrow{grid-template-columns:minmax(28px,.45fr) minmax(0,1.1fr) minmax(0,1.1fr) minmax(32px,.5fr)}.setrow input{padding:9px 5px}.progress{margin:2px 0 13px 10%;min-height:1em}.timer-live{font-size:1.75em;font-weight:800;font-variant-numeric:tabular-nums;color:#8edac0}.font-settings{display:flex;flex-direction:column;gap:8px}.font-settings input{width:100%}.font-settings .ends{display:flex;justify-content:space-between;color:#a6b1bd;font-size:.8em}.alt-panel{border-top:1px solid #465564;margin-top:14px;padding-top:12px}.alt-panel img{width:100%;border-radius:9px;margin-top:8px} 
 
@@ -244,7 +244,7 @@ body:not(.on-home) .divider{border-color:#245543}
 :root[data-theme="light"] .lexl-history-back{background:#e8f7ee!important;color:#174f39!important;border-color:#b8dcc7!important}
 :root[data-theme="light"] .lexl-history-actions .lexl-history-delete{background:#fff0f0!important;color:#983d45!important;border-color:#dba5a8!important}
 
-/* beta 0.11.5 – tydligare och unika programikoner */
+/* beta 0.11.6 – tydligare och unika programikoner */
 .lexl-program-view .lexl-icon{width:18px;height:18px;display:inline-block;vertical-align:-.24em;flex:none;stroke-width:1.9}
 .lexl-program-view .lexl-program-metrics span,.lexl-program-view .lexl-exercise-tags span{display:inline-flex;align-items:center;gap:5px}
 .lexl-program-view .lexl-program-metrics .lexl-icon{width:16px;height:16px}
@@ -256,7 +256,7 @@ body:not(.on-home) .divider{border-color:#245543}
 .lexl-program-view .lexl-instruction-toggle>.lexl-chevron{margin-left:auto;display:inline-flex;align-items:center}
 .lexl-program-view .lexl-instruction-toggle .lexl-icon{width:19px;height:19px}
 
-/* beta 0.11.5: same readable icon scale as history; no duplicate pseudo-icon */
+/* beta 0.11.6: same readable icon scale as history; no duplicate pseudo-icon */
 .lexl-program-view .lexl-exercise-tags .lexl-icon{width:20px!important;height:20px!important;stroke-width:1.9!important;flex-shrink:0}
 .lexl-program-view .lexl-program-metrics .lexl-icon{width:20px!important;height:20px!important;stroke-width:1.9!important}
 .lexl-program-view .lexl-exercise-tags span{gap:7px!important;min-height:34px;white-space:nowrap}
@@ -264,7 +264,7 @@ body:not(.on-home) .divider{border-color:#245543}
 .lexl-program-view .lexl-instruction-toggle>.lexl-icon{width:21px!important;height:21px!important;flex-shrink:0}
 @media(max-width:390px){.lexl-program-view .lexl-exercise-tags .lexl-icon{width:18px!important;height:18px!important}.lexl-program-view .lexl-exercise-tags span{gap:5px!important}}
 
-/* beta 0.11.5 – fixed-width SVG chevrons, consistent instruction buttons */
+/* beta 0.11.6 – fixed-width SVG chevrons, consistent instruction buttons */
 .lexl-program-view .lexl-expand-all{display:inline-flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;min-height:44px!important;padding:10px 13px!important;border-radius:13px!important;border:1px solid #198c6d!important;background:#063a2d!important;color:#d6ffeb!important;font-size:.79em!important;font-weight:700!important;white-space:nowrap!important;line-height:1.2!important;box-shadow:none!important}
 .lexl-program-view .lexl-expand-label{display:block;white-space:nowrap}
 .lexl-program-view .lexl-chevron{display:inline-flex!important;align-items:center;justify-content:center;width:22px!important;height:22px!important;min-width:22px!important;flex:0 0 22px!important;margin-left:0!important}
@@ -274,7 +274,7 @@ body:not(.on-home) .divider{border-color:#245543}
 .lexl-program-view .lexl-instruction-toggle[aria-expanded="true"] .lexl-icon:last-child{transform:rotate(90deg)}
 @media(prefers-reduced-motion:reduce){.lexl-program-view .lexl-chevron .lexl-icon,.lexl-program-view .lexl-instruction-toggle .lexl-icon:last-child{transition:none}}
 
-/* beta 0.11.5 – program overview icons aligned with history and navigation */
+/* beta 0.11.6 – program overview icons aligned with history and navigation */
 .lexl-program-view .lexl-program-metrics>span{display:inline-flex;align-items:center;gap:8px;min-height:43px;padding:8px 12px;font-size:.82em;line-height:1.2}
 .lexl-program-view .lexl-program-metrics>span>.lexl-icon{width:23px!important;height:23px!important;stroke-width:1.9!important;vertical-align:middle}
 .lexl-program-view .lexl-program-main-action button,.lexl-program-view .lexl-program-secondary button{display:flex;align-items:center;justify-content:center;gap:10px}
@@ -282,7 +282,7 @@ body:not(.on-home) .divider{border-color:#245543}
 .lexl-program-view .lexl-program-secondary button{font-size:.85em;min-height:48px}
 @media(max-width:390px){.lexl-program-view .lexl-program-metrics>span{gap:6px;padding:7px 9px;font-size:.78em}.lexl-program-view .lexl-program-metrics>span>.lexl-icon{width:21px!important;height:21px!important}}
 
-/* beta 0.11.5: single icon system on program page */
+/* beta 0.11.6: single icon system on program page */
 .lexl-program-view .lexl-instruction-toggle{display:flex!important;align-items:center!important;gap:10px!important;width:100%!important}
 .lexl-program-view .lexl-instruction-toggle>.lexl-icon{width:22px!important;height:22px!important;flex:none}
 .lexl-program-view .lexl-instruction-toggle>.lexl-instruction-label{flex:1;text-align:left}
@@ -290,7 +290,7 @@ body:not(.on-home) .divider{border-color:#245543}
 .lexl-program-view .lexl-instruction-toggle>.lexl-chevron .lexl-icon{width:22px!important;height:22px!important}
 .lexl-program-view .lexl-program-metrics .lexl-icon,.lexl-program-view .lexl-exercise-tags .lexl-icon{stroke-width:1.9!important}
 
-/* beta 0.11.5 – bildfria programkort med större tydligare ikoner */
+/* beta 0.11.6 – bildfria programkort med större tydligare ikoner */
 .lexl-program-view .lexl-exercise-summary{grid-template-columns:42px minmax(0,1fr)!important;gap:12px!important;align-items:start!important}
 .lexl-program-view .lexl-exercise-number{height:43px!important;min-width:42px!important}
 .lexl-program-view .lexl-exercise-body h3{font-size:clamp(1em,4vw,1.15em)!important;line-height:1.3!important;margin:2px 0 12px!important}
@@ -436,6 +436,18 @@ input,textarea,select,[contenteditable="true"],[contenteditable=""],.editable-te
 .lexl-edit-section[open] summary > .lexl-icon{transform:rotate(90deg)!important}
 .lexl-edit-expand .lexl-icon{display:block;width:20px;height:20px;color:inherit}
 :root[data-theme="light"] .lexl-edit-section summary > .lexl-icon{color:#245a48}
+
+.lexl-circle-overview-block{border:2px solid #57e4a8;border-radius:15px;padding:8px 10px;margin:16px 0;background:rgba(37,120,82,.08)}
+.lexl-circle-overview-block .lexl-exercise-card{margin:6px 0!important;border-left:1px solid #356b53!important}
+.lexl-circle-block{border:2px solid #57e4a8;border-radius:15px;padding:9px;margin:14px 0;background:rgba(37,120,82,.09)}
+.lexl-circle-block-head{display:flex;align-items:center;gap:8px;color:#8ff0c0;padding:2px 2px 9px;min-height:44px}
+.lexl-circle-block-head strong{flex:1;font-size:13px;letter-spacing:.045em;display:flex;align-items:center;gap:6px}
+.lexl-circle-block .lexl-sort-card{margin:5px 0!important;border-radius:10px!important;border:1px solid #32694f!important;background:#1b3029!important}
+.lexl-circle-block .lexl-sort-card .lexl-drag-handle{opacity:.35}
+.lexl-circle-choice{display:flex;align-items:center;gap:10px;padding:12px 8px;border-bottom:1px solid #344e45;font-size:15px;color:#f0f8f4;margin:0}
+.lexl-circle-choice input{width:22px;height:22px;flex-shrink:0;accent-color:#53d69d}
+.lexl-circle-choice span{flex:1}.lexl-circle-choice small{font-size:11px}
+.lexl-circle-checklist{max-height:54vh;overflow:auto;border:1px solid #385949;border-radius:9px}
 </style><style id="lexl-circle-0115">
 .lexl-in-circle{border-left:4px solid #54dca6!important;background:linear-gradient(90deg,rgba(58,174,124,.12),transparent 60%),#1b222b!important;margin-top:3px!important;margin-bottom:3px!important;border-radius:7px!important}
 .lexl-circle-first{border-top:2px solid #54dca6!important;margin-top:15px!important;border-top-left-radius:13px!important;border-top-right-radius:13px!important}
@@ -533,7 +545,7 @@ function lexlBottomNav(active){return `<nav class="lexl-shared-bottom" aria-labe
 function openProgramNav(){const p=state.programs.find(x=>x.id===selected)||state.programs[0];if(p)go('program',p.id);else go('home')}
 function openTrainingNav(){if(state.draft)go('workout');else {go('home');window.scrollTo(0,0)}}
 function navTabs(active){return `<div class="tabs">${button('Program',"go('home')",active==='home'?'active':'')}${button('Historik',"go('history')",active==='history'?'active':'')}</div>`;}
-function settingsView(){return `<h2>⚙ Inställningar</h2><div class="card"><h3>Utseende</h3><p class="muted">Välj ljust, mörkt eller följ telefonens tema.</p><label for="theme-choice">Färgtema</label><select id="theme-choice" onchange="setTheme(this.value)"><option value="system" ${themeChoice==='system'?'selected':''}>Följ telefonens inställning</option><option value="light" ${themeChoice==='light'?'selected':''}>Ljust läge</option><option value="dark" ${themeChoice==='dark'?'selected':''}>Mörkt läge</option></select></div>${fontSettings()}<div class="card"><h3 class="lexl-settings-heading">${lexlIcon('backup')} Säkerhetskopia</h3><p>Program och historik sparas lokalt på denna enhet. Exportera en säkerhetskopia regelbundet och alltid före versionsbyte.</p>${button('Exportera säkerhetskopia (JSON)',"exportData()",'primary')}<label>Importera säkerhetskopia (ersätter befintliga data)</label><label class="lexl-file-button" for="lexl-import-file">${lexlIcon('upload')} Välj JSON-fil</label><input id="lexl-import-file" class="lexl-hidden-file" type="file" accept=".json,application/json" onchange="importData(this.files[0])"></div><div class="card"><b>Om LEXL – beta 0.11.5</b><p class="muted"><ul class="lexl-about-list"><li>LEXL – EVERY REP COUNTS är en installerbar träningslogg med lokal lagring och offline-stöd.</li><li>Historiken sparas lokalt. Exportera regelbundet en säkerhetskopia.</li><li><strong>Nytt i beta 0.11.5:</strong> synliga pilar på övningskort och instruktion/kommentar, vänsterställda rubriker, en gemensam knapp för expandera/fäll ihop alla och en kontrollpanel som inte följer med vid skrollning. Tidigare funktioner är kvar.</li><li>Vikt räknas som kg × repetitioner för genomförda set med registrerade värden. Kombinationsövningars registrerade vikter summeras.</li><li>Synkronisering mellan enheter ingår ännu inte.</li></ul></p></div>`;}
+function settingsView(){return `<h2>⚙ Inställningar</h2><div class="card"><h3>Utseende</h3><p class="muted">Välj ljust, mörkt eller följ telefonens tema.</p><label for="theme-choice">Färgtema</label><select id="theme-choice" onchange="setTheme(this.value)"><option value="system" ${themeChoice==='system'?'selected':''}>Följ telefonens inställning</option><option value="light" ${themeChoice==='light'?'selected':''}>Ljust läge</option><option value="dark" ${themeChoice==='dark'?'selected':''}>Mörkt läge</option></select></div>${fontSettings()}<div class="card"><h3 class="lexl-settings-heading">${lexlIcon('backup')} Säkerhetskopia</h3><p>Program och historik sparas lokalt på denna enhet. Exportera en säkerhetskopia regelbundet och alltid före versionsbyte.</p>${button('Exportera säkerhetskopia (JSON)',"exportData()",'primary')}<label>Importera säkerhetskopia (ersätter befintliga data)</label><label class="lexl-file-button" for="lexl-import-file">${lexlIcon('upload')} Välj JSON-fil</label><input id="lexl-import-file" class="lexl-hidden-file" type="file" accept=".json,application/json" onchange="importData(this.files[0])"></div><div class="card"><b>Om LEXL – beta 0.11.6</b><p class="muted"><ul class="lexl-about-list"><li>LEXL – EVERY REP COUNTS är en installerbar träningslogg med lokal lagring och offline-stöd.</li><li>Historiken sparas lokalt. Exportera regelbundet en säkerhetskopia.</li><li><strong>Nytt i beta 0.11.6:</strong> synliga pilar på övningskort och instruktion/kommentar, vänsterställda rubriker, en gemensam knapp för expandera/fäll ihop alla och en kontrollpanel som inte följer med vid skrollning. Tidigare funktioner är kvar.</li><li>Vikt räknas som kg × repetitioner för genomförda set med registrerade värden. Kombinationsövningars registrerade vikter summeras.</li><li>Synkronisering mellan enheter ingår ännu inte.</li></ul></p></div>`;}
 const clone=x=>JSON.parse(JSON.stringify(x));let state;try{state=JSON.parse(localStorage.getItem(K))}catch{}if(!state||!Array.isArray(state.programs))state={programs:clone(ORIGINAL),history:[],draft:null};
 // Bevara historik. Migrera endast originalprogrammets två felaktigt uppdelade övningar.
 function migrateCombo(data){
@@ -635,52 +647,67 @@ function lexlClusterCircles(p){
  p.exercises=ordered;
 }
 function lexlCircleLabel(g){return /^[1-9]$/.test(String(g))?String.fromCharCode(64+Number(g)):String(g)}
-function setGroup(id,i,v){
- const p=state.programs.find(x=>x.id===id);if(!p)return;
- if(exerciseOrderDirty()){alert('Spara eller avbryt först ändrad övningsordning.');render();return}
- const ex=p.exercises[i],old=ex.circleGroup||'';
- if(v===old)return;
- if(v&&!p.exercises.some((e,j)=>j!==i&&e.circleGroup===v)){
-  alert('En cirkel behöver minst två övningar. Använd Skapa cirkel för att välja flera samtidigt.');render();return;
- }
- ex.circleGroup=v;
- lexlNormalizeCircles(p);lexlClusterCircles(p);syncDraftExerciseOrder(p);save();render();
+let lexlCircleStage=null;
+function lexlStage(id){
+ if(!lexlCircleStage||lexlCircleStage.id!==id){const p=state.programs.find(x=>x.id===id);lexlCircleStage={id,groups:Object.fromEntries(p.exercises.map(e=>[e.id,e.circleGroup||'']))};}
+ return lexlCircleStage;
 }
-function lexlCreateCircle(id){
+function lexlGroupFor(ex){return lexlCircleStage?.id===selected?(lexlCircleStage.groups[ex.id]||''):(ex.circleGroup||'')}
+function lexlGroupOrder(){const list=document.getElementById('lexl-sort-list');return list?[...list.querySelectorAll('.lexl-sort-card[data-ex-id]')].map(n=>n.dataset.exId):[]}
+function lexlCircleDirty(){const p=state.programs.find(x=>x.id===selected);if(!p||!lexlCircleStage||lexlCircleStage.id!==selected)return false;return p.exercises.some(e=>(e.circleGroup||'')!==(lexlCircleStage.groups[e.id]||''))}
+function lexlCircleModalClose(){document.getElementById('lexl-circle-modal')?.remove()}
+function lexlCirclePicker(id,g=''){
  const p=state.programs.find(x=>x.id===id);if(!p)return;
- if(exerciseOrderDirty()){alert('Spara eller avbryt först ändrad övningsordning.');return}
- const raw=prompt('Ange numren på minst två övningar som ska ingå i samma cirkel, separerade med kommatecken.\\n\\n'+p.exercises.map((e,i)=>(i+1)+'. '+e.name).join('\\n'));
- if(raw===null)return;
- const nums=raw.split(/[,; ]+/).filter(Boolean).map(Number);
- if(nums.length<2||nums.some(n=>!Number.isInteger(n)||n<1||n>p.exercises.length)||new Set(nums).size!==nums.length){
-  alert('Ange minst två olika giltiga övningsnummer, exempelvis 2, 4, 6.');return;
- }
- let n=1;while(p.exercises.some(e=>e.circleGroup===String(n)))n++;
- nums.forEach(i=>p.exercises[i-1].circleGroup=String(n));
- lexlNormalizeCircles(p);lexlClusterCircles(p);syncDraftExerciseOrder(p);save();render();
+ const stage=lexlStage(id);
+ if(!g){let n=1;while(Object.values(stage.groups).includes(String(n)))n++;g=String(n)}
+ const selectedIds=p.exercises.filter(e=>stage.groups[e.id]===g).map(e=>e.id);
+ const modal=document.createElement('div');modal.id='lexl-circle-modal';modal.className='modal';
+ modal.innerHTML=`<div class="modal-inner lexl-circle-picker" role="dialog" aria-modal="true" aria-label="Välj övningar"><h3>${selectedIds.length?'Redigera':'Skapa'} cirkel ${esc(lexlCircleLabel(g))}</h3><p class="muted">Markera minst två övningar. Ändringen sparas först med Spara ändringar i programredigeraren.</p><div class="lexl-circle-checklist">${p.exercises.map(e=>`<label class="lexl-circle-choice"><input type="checkbox" value="${esc(e.id)}" ${selectedIds.includes(e.id)?'checked':''}><span>${esc(e.name)}</span>${stage.groups[e.id]&&stage.groups[e.id]!==g?`<small>Cirkel ${esc(lexlCircleLabel(stage.groups[e.id]))}</small>`:''}</label>`).join('')}</div><div class="buttons"><button type="button" onclick="lexlCircleModalClose()">Avbryt</button>${selectedIds.length?`<button type="button" class="danger" onclick="lexlRemoveCircle('${id}','${g}')">Lös upp cirkel</button>`:''}<button type="button" class="primary" onclick="lexlCirclePickSave('${id}','${g}')">Bekräfta urval</button></div></div>`;
+ document.body.appendChild(modal);
 }
-function lexlCircleDecorate(){
+function lexlCirclePickSave(id,g){
+ const chosen=[...document.querySelectorAll('#lexl-circle-modal input:checked')].map(n=>n.value);
+ if(chosen.length<2){alert('Välj minst två övningar.');return}
+ const stage=lexlStage(id);Object.keys(stage.groups).forEach(ex=>{if(stage.groups[ex]===g)stage.groups[ex]=''});
+ chosen.forEach(ex=>stage.groups[ex]=g);
+ lexlCircleModalClose();lexlRebuildCircleBlocks();refreshExerciseOrderButtons();
+}
+function lexlRemoveCircle(id,g){if(!confirm('Lös upp cirkel '+lexlCircleLabel(g)+'? Övningarna finns kvar.'))return;const stage=lexlStage(id);Object.keys(stage.groups).forEach(ex=>{if(stage.groups[ex]===g)stage.groups[ex]=''});lexlCircleModalClose();lexlRebuildCircleBlocks();refreshExerciseOrderButtons()}
+function setGroup(id,i,v){const p=state.programs.find(x=>x.id===id);if(!p)return;const stage=lexlStage(id);stage.groups[p.exercises[i].id]=v;lexlRebuildCircleBlocks();refreshExerciseOrderButtons()}
+function lexlCreateCircle(id){lexlCirclePicker(id)}
+function lexlCircleDecorate(){lexlRebuildCircleBlocks()}
+function lexlRebuildCircleBlocks(){
  const list=document.getElementById('lexl-sort-list');if(!list)return;
  const p=state.programs.find(x=>x.id===selected);if(!p)return;
- const byId=new Map(p.exercises.map(e=>[e.id,e]));
- const cards=[...list.querySelectorAll(':scope > .lexl-sort-card')];
- cards.forEach((card,i)=>{
-  const g=byId.get(card.dataset.exId)?.circleGroup||'';
-  card.classList.toggle('lexl-in-circle',!!g);
-  card.classList.toggle('lexl-circle-first',!!g&&(i===0||byId.get(cards[i-1].dataset.exId)?.circleGroup!==g));
-  card.classList.toggle('lexl-circle-last',!!g&&(i===cards.length-1||byId.get(cards[i+1].dataset.exId)?.circleGroup!==g));
-  const title=card.querySelector('.lexl-edit-name');
-  if(title){
-   let mark=card.querySelector('.lexl-circle-marker');
-   if(g){if(!mark){mark=document.createElement('span');mark.className='lexl-circle-marker';title.after(mark)}
-    mark.textContent='⟳ CIRKEL '+lexlCircleLabel(g);
-   }else if(mark)mark.remove();
-  }
+ const stage=lexlStage(selected);const byId=new Map(p.exercises.map(e=>[e.id,e]));
+ const cards=[...list.querySelectorAll('.lexl-sort-card[data-ex-id]')];
+ // Keep first occurrence of each circle at its current position and cluster all members.
+ const ordered=[],seen=new Set();
+ cards.forEach(card=>{const g=stage.groups[card.dataset.exId]||'';if(!g){ordered.push(card);return}if(seen.has(g))return;seen.add(g);ordered.push(...cards.filter(n=>stage.groups[n.dataset.exId]===g))});
+ list.replaceChildren();let lastGroup=null,wrapper=null;
+ ordered.forEach(card=>{
+  const g=stage.groups[card.dataset.exId]||'';
+  card.classList.toggle('lexl-in-circle',!!g);card.classList.remove('lexl-circle-first','lexl-circle-last');
+  card.querySelector('.lexl-circle-marker')?.remove();
+  if(g){
+   if(lastGroup!==g){wrapper=document.createElement('div');wrapper.className='lexl-circle-block';wrapper.dataset.circle=g;wrapper.innerHTML=`<div class="lexl-circle-block-head"><button type="button" class="lexl-drag-handle lexl-circle-handle" aria-label="Flytta hela cirkel ${esc(lexlCircleLabel(g))}">${lexlIcon('grip-vertical')}</button><strong>${lexlIcon('circle')} CIRKEL ${esc(lexlCircleLabel(g))}</strong><button type="button" class="mini" onclick="lexlCirclePicker('${selected}','${g}')">Redigera</button></div>`;list.appendChild(wrapper)}
+   wrapper.appendChild(card);
+  }else list.appendChild(card);
+  lastGroup=g;
+ });
+ initCircleBlockDrag();
+}
+function initCircleBlockDrag(){
+ const list=document.getElementById('lexl-sort-list');if(!list)return;
+ list.querySelectorAll('.lexl-circle-handle').forEach(handle=>{
+  handle.style.touchAction='none';let active=null;
+  handle.addEventListener('pointerdown',ev=>{if(ev.isPrimary===false||(ev.pointerType==='mouse'&&ev.button!==0))return;const block=handle.closest('.lexl-circle-block');if(!block)return;active={block,id:ev.pointerId};handle.setPointerCapture(ev.pointerId);ev.preventDefault()});
+  handle.addEventListener('pointermove',ev=>{if(!active||active.id!==ev.pointerId)return;ev.preventDefault();const others=[...list.children].filter(n=>n!==active.block);const before=others.find(n=>ev.clientY<n.getBoundingClientRect().top+n.getBoundingClientRect().height/2);if(before)list.insertBefore(active.block,before);else list.appendChild(active.block);refreshExerciseOrderButtons();if(ev.clientY<75)window.scrollBy(0,-10);else if(ev.clientY>innerHeight-75)window.scrollBy(0,10)});
+  const end=ev=>{if(active&&active.id===ev.pointerId){active=null;refreshExerciseOrderButtons()}};handle.addEventListener('pointerup',end);handle.addEventListener('pointercancel',end);
  });
 }
-
 function newGroup(id){let p=state.programs.find(x=>x.id===id);let n=1;while(p.exercises.some(e=>e.circleGroup===String(n)))n++;let i=Number(prompt('Vilket övningsnummer ska ingå i den nya cirkeln? (1–'+p.exercises.length+')'));if(!i||i>p.exercises.length)return;p.exercises[i-1].circleGroup=String(n);save();render()}
-function addSet(id){const d=state.draft;let ix=d.rows.map(r=>r.id).lastIndexOf(id);if(ix<0)return;const prev=d.rows[ix];const r={...clone(prev),set:prev.set+1,done:false};d.rows.splice(ix+1,0,r);save();render()}
+function addSet(id){const d=state.draft;let ix=d.rows.map(r=>r.id).lastIndexOf(id);if(ix<0)return;const prev=d.rows[ix];const r={...clone(prev),set:prev.set+1,done:false,started:false,weightTouched:false,weightPressTouched:false,repsTouched:false};d.rows.splice(ix+1,0,r);save();render()}
 function removeSet(id){const d=state.draft;let ix=d.rows.map(r=>r.id).lastIndexOf(id);if(ix<0||d.rows.filter(r=>r.id===id).length<=1)return;if(d.rows[ix].done&&!confirm('Ta bort ett markerat set?'))return;d.rows.splice(ix,1);save();render()}
 function timerPause(){const d=state.draft;if(!d)return;d.pausedAt??=null;d.pausedMs??=0;if(d.pausedAt){d.pausedMs+=Date.now()-new Date(d.pausedAt).getTime();d.pausedAt=null}else d.pausedAt=new Date().toISOString();save();render()}
 function minutesTotal(d,end=Date.now()){let t=new Date(d.started||Date.now()).getTime();let stop=d.pausedAt?new Date(d.pausedAt).getTime():end;return Math.max(0,Math.round((stop-t-(d.pausedMs||0))/60000))}
@@ -698,16 +725,33 @@ try{const saved=JSON.parse(sessionStorage.getItem(LEXL_VIEW_KEY)||'null');if(sav
 const el=document.getElementById('app'),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function save(){try{localStorage.setItem(K,JSON.stringify(state));keepDraftSnapshot();document.getElementById('status').textContent='Sparat lokalt'}catch(e){alert('Kunde inte spara: '+e.message)}}
 function button(text,fn,cls=''){return `<button class="${cls}" onclick="${fn}">${text}</button>`}
-function go(v,id){if(view==='edit'&&v!=='edit'&&exerciseOrderDirty()&&!confirm('Du har en osparad övningsordning. Lämna utan att spara?'))return;view=v;selected=id??selected;editing=null;refOpen=false;refExercise=null;try{sessionStorage.setItem(LEXL_VIEW_KEY,JSON.stringify({view,selected}))}catch(e){}render();window.scrollTo(0,0)}
+function go(v,id){if(view==='edit'&&v!=='edit'&&exerciseOrderDirty()&&!confirm('Du har en osparad övningsordning. Lämna utan att spara?'))return;if(!lexlHandlingPop&&v!==view){lexlNavStack.push({view,selected});history.pushState({lexl:true},'','#'+v)}if(view==='edit'&&v!=='edit')lexlCircleStage=null;view=v;selected=id??selected;editing=null;refOpen=false;refExercise=null;try{sessionStorage.setItem(LEXL_VIEW_KEY,JSON.stringify({view,selected}))}catch(e){}render();window.scrollTo(0,0)}
+// Android browser back: return to the previous in-app view instead of closing the PWA.
+let lexlNavStack=[];let lexlHandlingPop=false;
+window.addEventListener('popstate',()=>{
+ if(lexlNavStack.length){const prev=lexlNavStack.pop();lexlHandlingPop=true;view=prev.view;selected=prev.selected;editing=null;refOpen=false;refExercise=null;render();lexlHandlingPop=false;}
+ else if(view!=='home'){lexlHandlingPop=true;view='home';selected=null;render();lexlHandlingPop=false;}
+});
 function returnToHome(){if(view==='workout'&&state.draft&&!confirm('Du har ett pågående pass. Vill du gå till startsidan? Passet sparas och kan fortsättas senare.'))return;go('home');}
 function render(){document.body.classList.toggle('on-home',view==='home');const gear=document.getElementById('settings-gear');if(gear){gear.classList.toggle('active',view==='settings');gear.setAttribute('aria-pressed',String(view==='settings'));}let p=state.programs.find(x=>x.id===selected);let resume=state.draft?button('▶ Fortsätt pågående pass',"go('workout')",'primary sticky-return'):'';if(view==='home')el.innerHTML=`<section class="lexl-hero" aria-label="LEXL – EVERY REP COUNTS"><img class="lexl-brand-art brand-dark" src="./logo-dark.png" alt="LEXL – EVERY REP COUNTS"/><img class="lexl-brand-art brand-light" src="./logo-light.png" alt="" aria-hidden="true"/></section><div class="dashboard-stats"><div class="stat-tile"><div class="stat-icon"><svg class="stat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/><path d="m8 15 2 2 5-5"/></svg></div><strong>${state.history.length}</strong><span>Genomförda pass</span></div><div class="stat-tile"><div class="stat-icon"><svg class="stat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="13" width="3" height="7" rx="1"/><rect x="10.5" y="9" width="3" height="11" rx="1"/><rect x="17" y="4" width="3" height="16" rx="1"/></svg></div><strong>${state.programs.length}</strong><span>Träningsprogram</span></div><div class="stat-tile"><div class="stat-icon"><svg class="stat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 3"/></svg></div><strong>${state.draft?'Pågår':'—'}</strong><span>Aktuellt pass</span></div></div>${draftStatus()}<div class="section-head"><h2>DINA PROGRAM</h2>${button('＋ Nytt program','newProgram()','create-program')}</div>${state.programs.map((p,i)=>`<div class="card program-card"><img class="program-photo" src="./program-${i%3+1}.webp" alt="Träningsutrustning" loading="lazy"><div class="program-info"><div><h3>${esc(p.name)}</h3><p class="program-meta">${groupNames(p).length?'Cirkel och styrketräning':'Styrketräning'}</p></div><div class="program-details"><span><strong>⌁ ${p.exercises.length}</strong> övningar</span><span><strong>⟳ ${groupNames(p).length}</strong> cirklar</span></div><div class="program-actions">${button('Visa program',`go('program','${p.id}')`,'primary')}</div></div></div>`).join('')}`;
 else if(view==='program'&&p)el.innerHTML=`<div class="lexl-program-view"><div class="lexl-program-hero"><div class="lexl-program-hero-content"><div class="lexl-eyebrow">TRÄNINGSPROGRAM</div><h1>${esc(p.name)}</h1><p>${groupNames(p).length?'Cirkel och styrketräning':'Fristående övningar'}</p><div class="lexl-program-metrics"><span>${lexlIcon('exercises')} ${p.exercises.length} övningar</span><span>${lexlIcon('sets')} ${p.exercises.reduce((n,e)=>n+(Number(e.sets)||0),0)} set</span>${groupNames(p).length?`<span>${lexlIcon('circle')} ${groupNames(p).length} cirklar</span>`:''}</div><div class="lexl-program-main-action">${button(`${lexlIcon('play')} Starta pass`,`start('${p.id}')`,'primary')}</div><div class="lexl-program-secondary">${button(`${lexlIcon('edit')} Redigera`,`go('edit','${p.id}')`)}${button(`${lexlIcon('copy')} Kopiera`,`duplicate('${p.id}')`)}${button(`${lexlIcon('plus')} Registrera äldre pass`,`startRetrospective('${p.id}')`)}</div></div></div>${resume}<div class="lexl-exercises-heading"><h2>Övningar</h2><button class="lexl-expand-all" type="button" onclick="toggleAllProgramInstructions()" id="lexl-expand-toggle" aria-expanded="false"><span class="lexl-expand-label">Visa alla instruktioner</span><span class="lexl-chevron" aria-hidden="true">${lexlIcon('chevron_right')}</span></button></div><div class="lexl-exercise-list">${p.exercises.map((e,i)=>`<article class="lexl-exercise-card ${e.circleGroup?`lexl-program-circle lexl-circle-${esc(e.circleGroup)}`:``}">${e.circleGroup&&(i===0||p.exercises[i-1].circleGroup!==e.circleGroup)?`<div class="lexl-circle-band">${lexlIcon('circle')} CIRKEL ${esc(lexlCircleLabel(e.circleGroup))}</div>`:``}<div class="lexl-exercise-summary"><div class="lexl-exercise-body"><h3>${esc(e.name)}</h3><div class="lexl-exercise-tags"><span>${lexlIcon('sets')} ${esc(e.sets)} set</span><span>${lexlIcon('reps')} ${esc(e.reps)} reps</span><span>${e.circleGroup?lexlIcon('circle')+' Cirkel '+esc(lexlCircleLabel(e.circleGroup)):'Fristående'}</span></div></div></div><button class="lexl-instruction-toggle" type="button" aria-expanded="false" onclick="toggleProgramInstruction(this)">${lexlIcon('instructions')}<span class="lexl-instruction-label">Visa instruktion</span><span class="lexl-chevron" aria-hidden="true">${lexlIcon('chevron_right')}</span></button><div class="lexl-instruction-panel" hidden>${EXERCISE_IMAGES[e.id]?`<img src="${EXERCISE_IMAGES[e.id]}" alt="Instruktionsbild för ${esc(e.name)}" loading="lazy">`:'<p>Ingen separat instruktionsbild finns för denna övning.</p>'}${e.note?`<p>${esc(e.note)}</p>`:''}${button('Öppna fullständig instruktion',`showRef('${p.id}',${i})`,'mini')}</div></article>`).join('')}</div>${p.pages.length?`<div class="lexl-program-pt">${button('Visa PT-bilder',"refOpen=!refOpen;render()")}${refOpen?p.pages.map(i=>`<img class="reference" src="${PAGES[i]}" loading="lazy">`).join(''):''}</div>`:''}</div>`;
-else if(view==='edit'&&p)el.innerHTML=`<button class="lexl-back-icon-button" onclick="leaveEdit('${p.id}')" aria-label="Till programmet">${lexlIcon('back')}</button><h2>Redigera program</h2><div class="card"><label>Programnamn</label><input value="${esc(p.name)}" onchange="setProg('${p.id}','name',this.value)"><label>Standardantal varv för cirklar</label><input type="number" min="1" value="${p.rounds}" onchange="setProg('${p.id}','rounds',+this.value)"></div><div class="lexl-edit-sortbar"><div class="lexl-collapse-actions"><button type="button" class="lexl-edit-secondary" onclick="lexlCreateCircle('${p.id}')">${lexlIcon('circle')} Skapa cirkel</button><button id="lexl-toggle-all" class="lexl-edit-secondary" onclick="lexlToggleAllEdit()" type="button">${lexlIcon('chevron-down')} Expandera alla</button></div><span id="lexl-order-status" class="muted">Ordningen är oförändrad</span><div class="lexl-edit-save-actions"><button id="lexl-order-cancel" class="lexl-edit-secondary" onclick="cancelExerciseOrder('${p.id}')" disabled>Avbryt</button><button id="lexl-order-save" class="primary" onclick="saveExerciseOrder('${p.id}')" disabled>Spara ändringar</button></div></div><div id="lexl-sort-list">${p.exercises.map((e,i)=>`<div class="card lexl-sort-card lexl-edit-collapsed" data-ex-id="${esc(e.id)}"><div class="lexl-sort-header"><button type="button" class="lexl-drag-handle" aria-label="Dra för att flytta ${esc(e.name)}" title="Håll och dra">${lexlIcon('grip-vertical')}</button><b class="lexl-edit-name">${esc(e.name)}</b><div class="lexl-sort-actions"><button type="button" class="lexl-edit-expand" onclick="lexlToggleEditCard(this)" aria-label="Expandera ${esc(e.name)}" aria-expanded="false">${lexlIcon('chevron-right')}</button><span class="lexl-edit-separator" aria-hidden="true"></span><button class="lexl-edit-delete danger" onclick="removeEx('${p.id}',${i})" aria-label="Ta bort övningen ${esc(e.name)}" title="Ta bort övning">${lexlIcon('trash')}</button></div></div><div class="lexl-edit-details"><label>Cirkelkoppling</label><select onchange="setGroup('${p.id}',${i},this.value)"><option value="" ${!e.circleGroup?'selected':''}>Fristående</option>${groupNames(p).map(g=>`<option value="${esc(g)}" ${e.circleGroup===g?'selected':''}>Cirkel ${esc(lexlCircleLabel(g))}</option>`).join('')}</select><label>Namn</label><input value="${esc(e.name)}" onchange="setEx('${p.id}',${i},'name',this.value);lexlUpdateEditName(this)"><div class="grid two"><div><label>Set</label><input type="number" min="1" value="${e.sets}" onchange="setEx('${p.id}',${i},'sets',+this.value)"></div><div><label>Reps / tid</label><input value="${esc(e.reps)}" onchange="setEx('${p.id}',${i},'reps',this.value)"></div></div><details class="lexl-edit-section"><summary><span class="lexl-edit-section-label">${lexlIcon('clipboard')}<span>Övningsinstruktion</span></span>${lexlIcon('chevron-right')}</summary><label>Instruktioner / målvikt</label><textarea rows="3" onchange="setEx('${p.id}',${i},'note',this.value)">${esc(e.note)}</textarea></details><details class="lexl-edit-section"><summary><span class="lexl-edit-section-label">${lexlIcon('message-circle')}<span>Kommentar</span></span>${lexlIcon('chevron-right')}</summary><label>Kommentar</label><textarea rows="3" placeholder="Egen kommentar om övningen" onchange="setEx('${p.id}',${i},'comment',this.value)">${esc(e.comment||'')}</textarea></details></div></div>`).join('')}</div><div class="lexl-edit-footer"><button class="primary" onclick="addEx('${p.id}')">${lexlIcon('plus')} Lägg till övning</button><div class="lexl-edit-footer-secondary"><button class="danger" onclick="resetProg('${p.id}')">Återställ original</button><button class="danger" onclick="deleteProg('${p.id}')">Ta bort program</button></div></div>`;if(view==='edit')initExerciseDrag(p.id);
+else if(view==='edit'&&p)el.innerHTML=`<button class="lexl-back-icon-button" onclick="leaveEdit('${p.id}')" aria-label="Till programmet">${lexlIcon('back')}</button><h2>Redigera program</h2><div class="card"><label>Programnamn</label><input value="${esc(p.name)}" onchange="setProg('${p.id}','name',this.value)"><label>Standardantal varv för cirklar</label><input type="number" min="1" value="${p.rounds}" onchange="setProg('${p.id}','rounds',+this.value)"></div><div class="lexl-edit-sortbar"><div class="lexl-collapse-actions"><button type="button" class="lexl-edit-secondary" onclick="lexlCreateCircle('${p.id}')">${lexlIcon('circle')} Skapa cirkel</button><button id="lexl-toggle-all" class="lexl-edit-secondary" onclick="lexlToggleAllEdit()" type="button">${lexlIcon('chevron-down')} Expandera alla</button></div><span id="lexl-order-status" class="muted">Ordningen är oförändrad</span><div class="lexl-edit-save-actions"><button id="lexl-order-cancel" class="lexl-edit-secondary" onclick="cancelExerciseOrder('${p.id}')" disabled>Avbryt</button><button id="lexl-order-save" class="primary" onclick="saveExerciseOrder('${p.id}')" disabled>Spara ändringar</button></div></div><div id="lexl-sort-list">${p.exercises.map((e,i)=>`<div class="card lexl-sort-card lexl-edit-collapsed" data-ex-id="${esc(e.id)}"><div class="lexl-sort-header"><button type="button" class="lexl-drag-handle" aria-label="Dra för att flytta ${esc(e.name)}" title="Håll och dra">${lexlIcon('grip-vertical')}</button><b class="lexl-edit-name">${esc(e.name)}</b><div class="lexl-sort-actions"><button type="button" class="lexl-edit-expand" onclick="lexlToggleEditCard(this)" aria-label="Expandera ${esc(e.name)}" aria-expanded="false">${lexlIcon('chevron-right')}</button><span class="lexl-edit-separator" aria-hidden="true"></span><button class="lexl-edit-delete danger" onclick="removeEx('${p.id}',${i})" aria-label="Ta bort övningen ${esc(e.name)}" title="Ta bort övning">${lexlIcon('trash')}</button></div></div><div class="lexl-edit-details"><label>Cirkelkoppling</label><p class="muted">Ändra cirkel via cirkelns Redigera-knapp eller Skapa cirkel.</p><label>Namn</label><input value="${esc(e.name)}" onchange="setEx('${p.id}',${i},'name',this.value);lexlUpdateEditName(this)"><div class="grid two"><div><label>Set</label><input type="number" min="1" value="${e.sets}" onchange="setEx('${p.id}',${i},'sets',+this.value)"></div><div><label>Reps / tid</label><input value="${esc(e.reps)}" onchange="setEx('${p.id}',${i},'reps',this.value)"></div></div><details class="lexl-edit-section"><summary><span class="lexl-edit-section-label">${lexlIcon('clipboard')}<span>Övningsinstruktion</span></span>${lexlIcon('chevron-right')}</summary><label>Instruktioner / målvikt</label><textarea rows="3" onchange="setEx('${p.id}',${i},'note',this.value)">${esc(e.note)}</textarea></details><details class="lexl-edit-section"><summary><span class="lexl-edit-section-label">${lexlIcon('message-circle')}<span>Kommentar</span></span>${lexlIcon('chevron-right')}</summary><label>Kommentar</label><textarea rows="3" placeholder="Egen kommentar om övningen" onchange="setEx('${p.id}',${i},'comment',this.value)">${esc(e.comment||'')}</textarea></details></div></div>`).join('')}</div><div class="lexl-edit-footer"><button class="primary" onclick="addEx('${p.id}')">${lexlIcon('plus')} Lägg till övning</button><div class="lexl-edit-footer-secondary"><button class="danger" onclick="resetProg('${p.id}')">Återställ original</button><button class="danger" onclick="deleteProg('${p.id}')">Ta bort program</button></div></div>`;if(view==='edit')initExerciseDrag(p.id);
 else if(view==='workout')renderWorkout();else if(view==='history')el.innerHTML=historyOverview()+lexlBottomNav('history');
 else if(view==='detail')el.innerHTML=historyDetails(selected)+lexlBottomNav('history');
 else if(view==='backup'||view==='settings')el.innerHTML=`${resume}${settingsView()}`;
 el.querySelectorAll('.lexl-program-bottom:not(.lexl-shared-bottom)').forEach(n=>n.remove());
 if(!el.querySelector('.lexl-shared-bottom'))el.insertAdjacentHTML('beforeend',lexlBottomNav(view==='detail'?'history':view==='edit'?'program':view));
+if(view==='program')lexlGroupOverviewCards();
+}
+function lexlGroupOverviewCards(){
+ const list=document.querySelector('.lexl-exercise-list');if(!list)return;
+ const p=state.programs.find(x=>x.id===selected);if(!p)return;
+ const cards=[...list.children].filter(n=>n.classList.contains('lexl-exercise-card'));
+ let wrap=null,last='';cards.forEach((card,i)=>{
+  const g=p.exercises[i]?.circleGroup||'';
+  if(g){if(g!==last){wrap=document.createElement('section');wrap.className='lexl-circle-overview-block';wrap.setAttribute('aria-label','Cirkel '+lexlCircleLabel(g));list.insertBefore(wrap,card)}wrap.appendChild(card)}else wrap=null;
+  last=g;
+ });
 }
 function setProg(id,k,v){if(exerciseOrderDirty()){alert('Spara eller avbryt ändrad övningsordning innan du ändrar programinställningar.');render();return}let p=state.programs.find(x=>x.id===id);p[k]=v;save();render()}
 function setEx(id,i,k,v){state.programs.find(x=>x.id===id).exercises[i][k]=v;save()}
@@ -727,11 +771,11 @@ function syncDraftExerciseOrder(program){
 function moveEx(id,i,d){let program=state.programs.find(x=>x.id===id);if(!program)return;let a=program.exercises,j=i+d;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];syncDraftExerciseOrder(program);save();render()}
 
 // Reorder is deliberately transactional: only the Save button mutates persisted program order.
-function exerciseOrderIds(){return [...document.querySelectorAll('#lexl-sort-list > .lexl-sort-card')].map(n=>n.dataset.exId)}
-function exerciseOrderDirty(){const p=state.programs.find(x=>x.id===selected);if(!p||!document.querySelector('#lexl-sort-list'))return false;return exerciseOrderIds().join('|')!==p.exercises.map(e=>e.id).join('|')}
-function refreshExerciseOrderButtons(){const dirty=exerciseOrderDirty();const saveBtn=document.getElementById('lexl-order-save'),cancelBtn=document.getElementById('lexl-order-cancel'),status=document.getElementById('lexl-order-status');if(saveBtn)saveBtn.disabled=!dirty;if(cancelBtn)cancelBtn.disabled=!dirty;if(status)status.textContent=dirty?'Ändrad ordning – inte sparad':'Ordningen är oförändrad'}
-function cancelExerciseOrder(id){const p=state.programs.find(x=>x.id===id),list=document.getElementById('lexl-sort-list');if(!p||!list)return;const nodes=new Map([...list.children].map(n=>[n.dataset.exId,n]));p.exercises.forEach(e=>{const n=nodes.get(e.id);if(n)list.appendChild(n)});refreshExerciseOrderButtons()}
-function saveExerciseOrder(id){const p=state.programs.find(x=>x.id===id);if(!p)return;const ids=exerciseOrderIds();if(ids.length!==p.exercises.length||new Set(ids).size!==ids.length||ids.some(x=>!p.exercises.some(e=>e.id===x))){alert('Kunde inte spara ordningen. Försök igen.');return}const map=new Map(p.exercises.map(e=>[e.id,e]));p.exercises=ids.map(x=>map.get(x));syncDraftExerciseOrder(p);save();render();const status=document.getElementById('lexl-order-status');if(status)status.textContent='Ordningen sparad'}
+function exerciseOrderIds(){return lexlGroupOrder()}
+function exerciseOrderDirty(){const p=state.programs.find(x=>x.id===selected);if(!p||!document.getElementById('lexl-sort-list'))return false;return exerciseOrderIds().join('|')!==p.exercises.map(e=>e.id).join('|')||lexlCircleDirty()}
+function refreshExerciseOrderButtons(){const dirty=exerciseOrderDirty();const saveBtn=document.getElementById('lexl-order-save'),cancelBtn=document.getElementById('lexl-order-cancel'),status=document.getElementById('lexl-order-status');if(saveBtn)saveBtn.disabled=!dirty;if(cancelBtn)cancelBtn.disabled=!dirty;if(status)status.textContent=dirty?'Ändringar – inte sparade':'Inga osparade ändringar'}
+function cancelExerciseOrder(id){lexlCircleStage=null;render()}
+function saveExerciseOrder(id){const p=state.programs.find(x=>x.id===id);if(!p)return;const ids=exerciseOrderIds();if(ids.length!==p.exercises.length||new Set(ids).size!==ids.length||ids.some(x=>!p.exercises.some(e=>e.id===x))){alert('Kunde inte spara ändringarna. Försök igen.');return}const map=new Map(p.exercises.map(e=>[e.id,e]));p.exercises=ids.map(x=>map.get(x));const stage=lexlStage(id);p.exercises.forEach(e=>e.circleGroup=stage.groups[e.id]||'');lexlNormalizeCircles(p);lexlClusterCircles(p);syncDraftExerciseOrder(p);if(state.draft?.id===id)state.draft.circleGroups=Object.fromEntries(p.exercises.map(e=>[e.id,e.circleGroup||'']));lexlCircleStage=null;save();render()}
 function leaveEdit(id){go('program',id)}
 
 function lexlToggleEditCard(button){
@@ -778,7 +822,7 @@ function initExerciseDrag(id){
   ev.preventDefault();
   const {card,preview,offsetY}=active;
   preview.style.top=(ev.clientY-offsetY)+'px';
-  const others=[...list.querySelectorAll(':scope > .lexl-sort-card')].filter(n=>n!==card);
+  const others=[...list.children].filter(n=>n!==card);
   const before=others.find(n=>ev.clientY<n.getBoundingClientRect().top+n.getBoundingClientRect().height/2);
   if(before){if(card.nextElementSibling!==before)list.insertBefore(card,before)}
   else if(card!==list.lastElementChild)list.appendChild(card);
@@ -792,6 +836,7 @@ function initExerciseDrag(id){
   handle.addEventListener('pointerdown',ev=>{
    if(active||ev.isPrimary===false||(ev.pointerType==='mouse'&&ev.button!==0))return;
    const card=handle.closest('.lexl-sort-card');if(!card)return;
+   if(card.closest('.lexl-circle-block')){alert('Flytta hela cirkeln med handtaget vid cirkelrubriken.');return}
    const r=card.getBoundingClientRect();const preview=card.cloneNode(true);
    preview.removeAttribute('data-ex-id');preview.classList.add('lexl-drag-preview');
    preview.style.cssText+=`;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px`;
@@ -832,7 +877,7 @@ function latestCompletedWeight(e,key){
 }
 function start(id){if(state.draft){if(state.draft.id===id){const program=state.programs.find(x=>x.id===id);if(program){syncDraftExerciseOrder(program);save()}go('workout');return}alert('Ett annat pass pågår. Fortsätt eller avbryt det först, så att inget skrivs över.');return}
  let p=state.programs.find(x=>x.id===id),rows=[];p.exercises.forEach(e=>{let last=latestCompletedWeight(e,'weight'),press=e.combo?latestCompletedWeight(e,'weightPress'):undefined;
- for(let i=1;i<=Math.max(1,e.sets);i++){rows.push({id:e.id,set:i,name:e.name,weightPress:e.combo?press:undefined,weight:last,reps:/^\d+$/.test(e.reps)?e.reps:'',target:e.reps,note:e.note,done:false,weightTouched:false,weightPressTouched:false})}});
+ for(let i=1;i<=Math.max(1,e.sets);i++){rows.push({id:e.id,set:i,name:e.name,weightPress:e.combo?press:undefined,weight:last,reps:/^\d+$/.test(e.reps)?e.reps:'',target:e.reps,note:e.note,done:false,started:false,weightTouched:false,weightPressTouched:false,repsTouched:false})}});
  state.draft={id,name:p.name,started:new Date().toISOString(),workoutDate:localISODate(),workoutClock:new Date().toTimeString().slice(0,5),rows,warmup:[],comments:{},layout:p.type,rounds:p.rounds,circleGroups:Object.fromEntries(p.exercises.map(e=>[e.id,e.circleGroup??(p.type==='cirkel'?'1':'')]))};save();go('workout')}
 function addWarm(){let d=state.draft;d.warmup??=[];d.warmup.push({activity:'Roddmaskin',minutes:'',seconds:'',distance:''});save();render()}
 function warmUpdate(i,k,v){if(k==='seconds'){const n=Math.floor(Number(v)||0);state.draft.warmup[i][k]=Math.max(0,Math.min(59,n));}else if(k==='minutes'){state.draft.warmup[i][k]=Math.max(0,Math.floor(Number(v)||0));}else{state.draft.warmup[i][k]=v;}save();render()}
@@ -874,12 +919,12 @@ function renderWorkout(){
 }
 function upd(i,k,v){let d=state.draft,r=d.rows[i];r[k]=v;
  if(k==='weight'||k==='weightPress'||k==='reps'){
-  r[k+'Touched']=true;
+  r[k+'Touched']=true;r.started=true;
   // Carry the new value to subsequent, not-yet-completed sets of this exercise.
   // An explicitly edited later set keeps its own value.
-  for(let j=i+1;j<d.rows.length;j++){let next=d.rows[j];if(next.id!==r.id)break;if(next.done||next[k+'Touched'])break;next[k]=v;}
+  for(let j=i+1;j<d.rows.length;j++){let next=d.rows[j];if(next.id!==r.id)break;if(next.done||next.started||next[k+'Touched']||next.weightTouched||next.repsTouched||next.weightPressTouched)break;next[k]=v;}
  }
- save();if(k==='done'||k==='weight'||k==='weightPress')render();}
+ save();if(k==='done'){r.started=true;render()}else if(k==='weight'||k==='weightPress'||k==='reps'){document.querySelectorAll('.setrow,.lexl-combo-row').forEach(row=>{const cells=row.querySelectorAll('input');if(!cells.length)return});if(k==='reps')render();else render()}}
 function finish(){if(!state.draft)return;if(!confirm('Spara det genomförda passet i historiken?'))return;const chosen=state.draft.workoutDate;const clock=state.draft.manualEntry?(state.draft.workoutClock||''):new Date(state.draft.started).toTimeString().slice(0,5);const date=state.draft.manualEntry?(chosen?new Date(chosen+'T'+(clock||'12:00')+':00').toISOString():new Date().toISOString()):(state.draft.started||new Date().toISOString());state.history.push({name:state.draft.name,date,manualEntry:!!state.draft.manualEntry,timeKnown:!!clock,workoutClock:clock,rows:clone(state.draft.rows),warmup:clone(state.draft.warmup||[]),comments:clone(state.draft.comments||{}),totalMinutes:state.draft.manualTotalMinutes??minutesTotal(state.draft),warmupMinutes:warmMinutes(state.draft),pausedMinutes:state.draft.manualEntry?null:Math.round(((state.draft.pausedMs||0)+(state.draft.pausedAt?Date.now()-new Date(state.draft.pausedAt).getTime():0))/60000),circleGroups:clone(state.draft.circleGroups||{})});state.draft=null;clearRecovery();save();go('history')}
 function cancelWorkout(){if(confirm('Radera påbörjat pass?')){state.draft=null;clearRecovery();save();go('home')}}
 function historyStamp(h){const date=new Date(h.date);const day=date.toLocaleDateString('sv-SE');if(h.timeKnown===false)return day+' · Tid saknas';const clock=h.workoutClock||date.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});return day+' · Start '+(h.timeEstimated?'ca ':'')+clock} function exportData(){let blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='min-traning-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
