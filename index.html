@@ -640,7 +640,7 @@ function volumeText(v){return v===null?'–':new Intl.NumberFormat('sv-SE',{maxi
 function lexlSummaryWeight(kg){if(kg==null||!Number.isFinite(Number(kg)))return '–';const n=Number(kg);return n>=1000?(n/1000).toLocaleString('sv-SE',{maximumFractionDigits:2})+' ton':n.toLocaleString('sv-SE',{maximumFractionDigits:2})+' kg'}
 function lexlSummaryTime(minutes){if(minutes==null||!Number.isFinite(Number(minutes)))return '–';const m=Math.max(0,Math.round(Number(minutes)));return m<60?m+' min':Math.floor(m/60)+' h'+(m%60?' '+m%60+' min':'')}
 function lexlHistoryExerciseCards(h,grouped){let html='',open=null;for(let i=0;i<grouped.length;i++){const g=grouped[i],circle=h.circleGroups&&h.circleGroups[g.key]!=null?String(h.circleGroups[g.key]):'';if(circle!==open){if(open)html+='</div></section>';open=circle||null;if(open)html+='<section class="lexl-history-circle" aria-label="Cirkel '+esc(lexlCircleLabel(open))+'"><div class="lexl-history-circle-title">'+lexlIcon('circle')+' CIRKEL '+esc(lexlCircleLabel(open))+'</div><div class="lexl-history-circle-content">';}html+='<article class="lexl-history-exercise"><div class="lexl-history-exercise-head"><div class="lexl-history-exercise-index">'+(i+1)+'</div><h3>'+esc(g.name)+'</h3></div>'+g.rows.map(r=>'<div class="lexl-history-set"><span>Set '+esc(r.set)+'</span><strong>'+(r.weight!==''&&r.weight!=null?esc(r.weight)+' kg':'–')+(r.weightPress!==undefined?' / '+(r.weightPress!==''&&r.weightPress!=null?esc(r.weightPress)+' kg':'–'):'')+'</strong><strong>'+(r.reps!==''&&r.reps!=null?esc(r.reps)+' reps':'–')+'</strong></div>').join('')+'</article>';}if(open)html+='</div></section>';return html;}
-function historyOverview(){const sessions=state.history.map((h,i)=>({h,i})).sort((a,b)=>{const da=Date.parse(a.h.workoutDate||a.h.date)||0,db=Date.parse(b.h.workoutDate||b.h.date)||0;return db-da||b.i-a.i});const minutes=state.history.reduce((n,h)=>n+(Number.isFinite(Number(h.totalMinutes))&&h.totalMinutes!=null?Number(h.totalMinutes):0),0);const doneSets=state.history.reduce((n,h)=>n+(h.rows||[]).filter(r=>r.done).length,0);const volumes=state.history.map(historyVolume).filter(v=>v!==null);const totalVolume=volumes.length?volumes.reduce((a,b)=>a+b,0):null;return `<section class="lexl-history-view"><div class="lexl-history-hero"><div class="lexl-history-eyebrow">DIN TRÄNING</div><h1>Träningshistorik</h1><p>Alla dina genomförda pass, samlade på ett ställe.</p><div class="lexl-history-stats"><div class="lexl-history-stat"><strong>${sessions.length}</strong><span>Pass</span></div><div class="lexl-history-stat"><strong>${doneSets}</strong><span>Set</span></div><div class="lexl-history-stat"><strong>${minutes?lexlSummaryTime(minutes):'–'}</strong><span>${minutes?'Träningstid':'Tid saknas'}</span></div><div class="lexl-history-stat"><strong>${lexlSummaryWeight(totalVolume)}</strong><span>Lyft vikt</span></div></div></div>${draftStatus()}<h2 class="lexl-history-title lexl-section-title">Genomförda pass</h2>${sessions.length?`<div class="lexl-history-list">${sessions.map(({h,i})=>{const d=historyDateParts(h);const done=(h.rows||[]).filter(r=>r.done);return `<article class="lexl-history-card"><div class="lexl-history-card-top"><div class="lexl-history-date"><strong>${d.day}</strong><small>${d.month}</small></div><div class="lexl-history-card-body"><h3>${esc(h.name)}</h3><p>${esc(d.date)} · ${esc(historyStamp(h).split(' · ').slice(1).join(' · '))}</p></div></div><div class="lexl-history-chips"><span>${lexlIcon('sets')} ${done.length}/${(h.rows||[]).length} set</span><span><svg class="lexl-history-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg> ${historyDuration(h)}</span><span>${lexlIcon('weight')} ${volumeText(historyVolume(h))} kg</span>${h.manualEntry?'<span>Manuellt registrerat</span>':''}</div><div class="lexl-history-actions">${button('Visa pass',`go('detail',${i})`,'primary lexl-history-open')}<button class="lexl-history-delete" onclick="deleteHistory(${i})" aria-label="Radera ${esc(h.name)}">Radera pass</button></div></article>`}).join('')}</div>`:'<div class="lexl-history-empty">Inga genomförda pass ännu. När du sparar ett träningspass visas det här.</div>'}</section>`}
+function historyOverview(){const sessions=state.history.map((h,i)=>({h,i})).sort((a,b)=>{const da=Date.parse(a.h.workoutDate||a.h.date)||0,db=Date.parse(b.h.workoutDate||b.h.date)||0;return db-da||b.i-a.i});const minutes=state.history.reduce((n,h)=>n+(Number.isFinite(Number(h.totalMinutes))&&h.totalMinutes!=null?Number(h.totalMinutes):0),0);const doneSets=state.history.reduce((n,h)=>n+(h.rows||[]).filter(r=>r.done).length,0);const volumes=state.history.map(historyVolume).filter(v=>v!==null);const totalVolume=volumes.length?volumes.reduce((a,b)=>a+b,0):null;return `<section class="lexl-history-view"><div class="lexl-history-hero"><div class="lexl-history-eyebrow">DIN TRÄNING</div><h1>Träningshistorik</h1><p>Alla dina genomförda pass, samlade på ett ställe.</p><div class="lexl-history-stats"><div class="lexl-history-stat"><strong>${sessions.length}</strong><span>Pass</span></div><div class="lexl-history-stat"><strong>${doneSets}</strong><span>Set</span></div><div class="lexl-history-stat"><strong>${minutes?lexlSummaryTime(minutes):'–'}</strong><span>${minutes?'Träningstid':'Tid saknas'}</span></div><div class="lexl-history-stat"><strong>${lexlSummaryWeight(totalVolume)}</strong><span>Vikt</span></div></div></div>${draftStatus()}<h2 class="lexl-history-title lexl-section-title">Genomförda pass</h2>${sessions.length?`<div class="lexl-history-list">${sessions.map(({h,i})=>{const d=historyDateParts(h);const done=(h.rows||[]).filter(r=>r.done);return `<article class="lexl-history-card"><div class="lexl-history-card-top"><div class="lexl-history-date"><strong>${d.day}</strong><small>${d.month}</small></div><div class="lexl-history-card-body"><h3>${esc(h.name)}</h3><p>${esc(d.date)} · ${esc(historyStamp(h).split(' · ').slice(1).join(' · '))}</p></div></div><div class="lexl-history-chips"><span>${lexlIcon('sets')} ${done.length}/${(h.rows||[]).length} set</span><span><svg class="lexl-history-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg> ${historyDuration(h)}</span><span>${lexlIcon('weight')} ${volumeText(historyVolume(h))} kg</span>${h.manualEntry?'<span>Manuellt registrerat</span>':''}</div><div class="lexl-history-actions">${button('Visa pass',`go('detail',${i})`,'primary lexl-history-open')}<button class="lexl-history-delete" onclick="deleteHistory(${i})" aria-label="Radera ${esc(h.name)}">Radera pass</button></div></article>`}).join('')}</div>`:'<div class="lexl-history-empty">Inga genomförda pass ännu. När du sparar ett träningspass visas det här.</div>'}</section>`}
 function lexlLegacyTimeParts(value){
  const raw=String(value??'').trim().replace(',','.');
  if(!raw)return {minutes:0,seconds:0};
@@ -984,96 +984,120 @@ try{const saved=JSON.parse(sessionStorage.getItem(LEXL_VIEW_KEY)||'null');if(sav
 const el=document.getElementById('app'),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function save(){try{localStorage.setItem(K,JSON.stringify(state));keepDraftSnapshot();document.getElementById('status').textContent='Sparat lokalt'}catch(e){alert('Kunde inte spara: '+e.message)}}
 function button(text,fn,cls=''){return `<button class="${cls}" onclick="${fn}">${text}</button>`}
-// Beta 0.11.14: browser-history-based navigation. Never push a new entry on back.
-let lexlNavDepth=0,lexlPendingHome=false,lexlRestoringNavigation=false,lexlNavigationTimer;
-try{
- const existing=history.state;
- if(existing?.lexl&&Number.isInteger(existing.depth)){
-  lexlNavDepth=existing.depth;
-  // The browser entry is authoritative, including after reload or restoration.
-  view=existing.view||'home';selected=existing.selected??null;
-  if(view==='workout'&&!state.draft)view='home';
- }else{
-  // A fresh history always starts at Home, even with a saved session view.
-  view='home';selected=null;
-  history.replaceState({lexl:true,depth:0,view,selected},'','#home');
+// Logical history: Home -> main view -> child, independent of visited tabs.
+let lexlNavDepth=0,lexlNavRoot=crypto.randomUUID(),lexlPendingHome=false,lexlRestoringNavigation=false,lexlNavigationTimer,lexlPendingRoute=null;
+function lexlRoute(v,id){
+ const home={view:'home',selected:null};
+ if(v==='backup')v='settings';
+ if(v==='workout'){
+  if(!state.draft)return [home];
+  const program=state.programs.find(p=>p.id===state.draft.id);
+  return [home,...(program?[{view:'program',selected:program.id}]:[]),{view:'workout',selected:state.draft.id}];
  }
-}catch(e){}
+ if(v==='program'||v==='edit'){
+  const program=state.programs.find(p=>p.id===id);
+  if(!program)return [home];
+  return [home,{view:'program',selected:id},...(v==='edit'?[{view:'edit',selected:id}]:[])];
+ }
+ if(v==='detail')return [home,{view:'history',selected:null},...(state.history[id]?[{view:'detail',selected:id}]:[])];
+ return ['history','stats','settings','about'].includes(v)?[home,{view:v,selected:null}]:[home];
+}
 function lexlStoreView(){try{sessionStorage.setItem(LEXL_VIEW_KEY,JSON.stringify({view,selected}))}catch(e){}}
 function lexlApplyView(v,id){
  document.querySelectorAll('dialog.modal[open]').forEach(lexlCloseDialog);lexlCloseMenu();
  if(view==='edit'&&v!=='edit')lexlCircleStage=null;
- view=v;selected=id??selected;editing=null;refOpen=false;refExercise=null;
+ view=v;selected=id??null;editing=null;refOpen=false;refExercise=null;
  lexlStoreView();render();window.scrollTo(0,0);
 }
 function lexlClearNavigationWait(){
- clearTimeout(lexlNavigationTimer);lexlPendingHome=false;lexlRestoringNavigation=false;
+ clearTimeout(lexlNavigationTimer);lexlPendingHome=false;lexlRestoringNavigation=false;lexlPendingRoute=null;
+}
+function lexlWriteRoute(path,reanchor=false,preserveView=false){
+ if(reanchor){
+  lexlNavRoot=crypto.randomUUID();
+  // A Home-only migration must also discard the old forward branch.
+  if(path.length===1)history.pushState({lexl:true,nav:2,root:lexlNavRoot,depth:0,...path[0]},'','#home');
+ }
+ path.forEach((entry,depth)=>{
+  const data={lexl:true,nav:2,root:lexlNavRoot,depth,...entry};
+  history[depth?'pushState':'replaceState'](data,'','#'+entry.view);
+ });
+ lexlNavDepth=path.length-1;
+ const target=path[lexlNavDepth];
+ if(preserveView)lexlStoreView();else lexlApplyView(target.view,target.selected);
+}
+function lexlNavigationFallback(){
+ const pending=lexlPendingRoute,restore=lexlRestoringNavigation;
+ lexlClearNavigationWait();
+ // A missing traversal must not lock navigation or discard an unsaved editor.
+ lexlWriteRoute(pending?.path||lexlRoute(view,selected),true,restore||pending?.preserve);
 }
 function lexlWaitForNavigation(){
- clearTimeout(lexlNavigationTimer);
- lexlNavigationTimer=setTimeout(()=>{
-  // Traversal can be ignored without throwing or dispatching popstate.
-  const pendingHome=lexlPendingHome;
-  lexlClearNavigationWait();
-  const current=history.state;
-  if(!current?.lexl)return;
-  lexlNavDepth=Number.isInteger(current.depth)?current.depth:0;
-  if(pendingHome){lexlApplyView(current.view||'home',current.selected??null)}
-  else{
-   // Keep the protected view, using the browser's actual position, without a push.
-   try{history.replaceState({lexl:true,depth:lexlNavDepth,view,selected},'','#'+view)}catch(e){}
-  }
- },1500);
+ clearTimeout(lexlNavigationTimer);lexlNavigationTimer=setTimeout(lexlNavigationFallback,1500);
+}
+function lexlRebuildRoute(path,preserve=false){
+ if(lexlPendingHome){lexlPendingRoute={path,preserve};return}
+ if(!lexlNavDepth){lexlWriteRoute(path,false,preserve);return}
+ lexlPendingRoute={path,preserve};lexlPendingHome=true;lexlWaitForNavigation();
+ try{history.go(-lexlNavDepth)}catch(e){lexlNavigationFallback()}
 }
 function lexlCanLeaveWorkout(v){return !(view==='workout'&&v!=='workout'&&state.draft)||confirm('Du har ett pågående pass. Vill du lämna träningsvyn? Passet sparas och kan fortsättas senare.')}
+function lexlCanNavigate(target){
+ if(view==='edit'&&(target.view!=='edit'||target.selected!==selected)&&exerciseOrderDirty()&&!confirm('Du har en osparad övningsordning. Lämna utan att spara?'))return false;
+ return lexlCanLeaveWorkout(target.view);
+}
 function go(v,id){
- if(lexlPendingHome||lexlRestoringNavigation)return;
- if(view==='edit'&&v!=='edit'&&exerciseOrderDirty()&&!confirm('Du har en osparad övningsordning. Lämna utan att spara?'))return;
- if(!lexlCanLeaveWorkout(v))return;
- if(v==='home'&&lexlNavDepth>0){
-  lexlPendingHome=true;lexlWaitForNavigation();
-  try{history.go(-lexlNavDepth)}catch(e){lexlClearNavigationWait();lexlNavDepth=0;lexlApplyView('home',null)}
+ if(lexlRestoringNavigation)return;
+ const path=lexlRoute(v,id??selected),target=path[path.length-1];
+ if(!lexlCanNavigate(target))return;
+ if(!lexlPendingHome&&view===target.view&&selected===target.selected&&lexlNavDepth===path.length-1){
+  // Refresh data views without erasing an unsaved editor or adding history.
+  if(view!=='edit')lexlApplyView(target.view,target.selected);
   return;
  }
- // History and Statistics are peer tabs: switching must not build a back loop.
- const replaceTab=['history','stats'].includes(view)&&['history','stats'].includes(v);
- if((v!==view||id!==undefined&&id!==selected)&&!replaceTab){
-  lexlNavDepth++;
-  try{history.pushState({lexl:true,depth:lexlNavDepth,view:v,selected:id??selected},'','#'+v)}catch(e){}
- }else{
-  try{history.replaceState({lexl:true,depth:lexlNavDepth,view:v,selected:id??selected},'','#'+v)}catch(e){}
- }
- lexlApplyView(v,id);
+ lexlRebuildRoute(path);
+}
+function lexlRestoreNavigation(dest){
+ lexlRestoringNavigation=true;lexlWaitForNavigation();
+ try{history.go(lexlNavDepth-dest.depth)}catch(e){lexlNavigationFallback()}
 }
 window.addEventListener('popstate',event=>{
  const dest=event.state;
- if(lexlRestoringNavigation){lexlClearNavigationWait();return;}
+ if(lexlRestoringNavigation){
+  if(dest?.root===lexlNavRoot&&dest.depth===lexlNavDepth)lexlClearNavigationWait();
+  return;
+ }
  if(lexlPendingHome){
-  lexlClearNavigationWait();lexlNavDepth=0;lexlApplyView('home',null);
-  try{history.replaceState({lexl:true,depth:0,view:'home',selected:null},'','#home')}catch(e){}
+  const pending=lexlPendingRoute;lexlClearNavigationWait();
+  lexlWriteRoute(pending.path,!(dest?.nav===2&&dest.root===lexlNavRoot&&dest.depth===0),pending.preserve);
   return;
  }
- if(!dest?.lexl){
-  // Browser has left the application's history; do not manufacture a new entry.
+ if(!dest?.lexl)return; // Home is the boundary; let the browser leave the app.
+ if(dest.nav!==2||dest.root!==lexlNavRoot){
+  // Do not resurrect entries left behind by an older model or fallback root.
+  if(view==='home'){history.back();return}
+  const path=lexlCanNavigate({view:'home',selected:null})?lexlRoute('home'):lexlRoute(view,selected);
+  lexlWriteRoute(path,true,path[path.length-1].view===view);
   return;
  }
- const nextView=dest.view==='workout'&&!state.draft?'home':dest.view||'home';
- const nextDepth=Number.isInteger(dest.depth)?dest.depth:0;
- const restoreNavigation=()=>{
-  const delta=lexlNavDepth-nextDepth;
-  if(delta){lexlRestoringNavigation=true;lexlWaitForNavigation();try{history.go(delta)}catch(e){lexlClearNavigationWait()}}
- };
- if(view==='edit'&&nextView!=='edit'&&exerciseOrderDirty()&&!confirm('Du har en osparad övningsordning. Lämna utan att spara?')){
-  restoreNavigation();
-  return;
- }
- if(!lexlCanLeaveWorkout(nextView)){
-  restoreNavigation();
-  return;
- }
- lexlNavDepth=nextDepth;
- lexlApplyView(nextView,dest.selected??null);
+ const modal=document.querySelector('dialog.modal[open]');
+ if(modal){lexlCloseDialog(modal);lexlRestoreNavigation(dest);return}
+ const path=lexlRoute(dest.view,dest.selected),target=path[path.length-1];
+ if(!lexlCanNavigate(target)){lexlRestoreNavigation(dest);return}
+ lexlNavDepth=dest.depth;
+ if(dest.depth!==path.length-1||dest.view!==target.view||dest.selected!==target.selected){lexlRebuildRoute(path);return}
+ lexlApplyView(target.view,target.selected);
 });
+try{
+ const existing=history.state;
+ const path=existing?.lexl?lexlRoute(existing.view,existing.selected):lexlRoute('home');
+ const target=path[path.length-1];view=target.view;selected=target.selected;
+ lexlNavDepth=Number.isInteger(existing?.depth)&&existing.depth>=0&&existing.depth<history.length?existing.depth:0;
+ if(existing?.nav===2&&typeof existing.root==='string'){
+  lexlNavRoot=existing.root;
+  if(lexlNavDepth!==path.length-1||existing.view!==target.view||existing.selected!==target.selected)queueMicrotask(()=>lexlRebuildRoute(path));
+ }else queueMicrotask(()=>existing?.lexl&&!lexlNavDepth&&path.length===1?lexlWriteRoute(path,true):lexlRebuildRoute(path));
+}catch(e){queueMicrotask(()=>lexlWriteRoute(lexlRoute('home'),true))}
 function returnToHome(){go('home')}
 function render(){document.body.classList.toggle('on-home',view==='home');const gear=document.getElementById('settings-gear');if(gear){gear.classList.toggle('active',view==='settings');gear.setAttribute('aria-pressed',String(view==='settings'));}let p=state.programs.find(x=>x.id===selected);let resume=state.draft?button('▶ Fortsätt pågående pass',"go('workout')",'primary sticky-return'):'';if(view==='home')el.innerHTML=`<section class="lexl-hero" aria-label="LEXL – EVERY REP COUNTS"><img class="lexl-brand-art brand-dark" src="./logo-dark.png" alt="LEXL – EVERY REP COUNTS"/><img class="lexl-brand-art brand-light" src="./logo-light.png" alt="" aria-hidden="true"/></section><div class="dashboard-stats"><div class="stat-tile"><div class="stat-icon"><svg class="stat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/><path d="m8 15 2 2 5-5"/></svg></div><strong>${state.history.length}</strong><span>Genomförda pass</span></div><div class="stat-tile"><div class="stat-icon"><svg class="stat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="13" width="3" height="7" rx="1"/><rect x="10.5" y="9" width="3" height="11" rx="1"/><rect x="17" y="4" width="3" height="16" rx="1"/></svg></div><strong>${state.programs.length}</strong><span>Träningsprogram</span></div><div class="stat-tile"><div class="stat-icon"><svg class="stat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 3"/></svg></div><strong>${state.draft?'Pågår':'—'}</strong><span>Aktuellt pass</span></div></div>${draftStatus()}<div class="section-head"><h2>DINA PROGRAM</h2>${button('＋ Nytt program','newProgram()','create-program')}</div>${state.programs.map((p,i)=>`<div class="card program-card"><img class="program-photo" src="./program-${i%3+1}.webp" alt="Träningsutrustning" loading="lazy"><div class="program-info"><div><h3>${esc(p.name)}</h3><p class="program-meta">${groupNames(p).length?'Cirkel och styrketräning':'Styrketräning'}</p></div><div class="program-details"><span><strong>⌁ ${p.exercises.length}</strong> övningar</span><span><strong>⟳ ${groupNames(p).length}</strong> cirklar</span></div><div class="program-actions">${button('Visa program',`go('program','${p.id}')`,'primary')}</div></div></div>`).join('')}`;
 else if(view==='program'&&p)el.innerHTML=`<div class="lexl-program-view"><div class="lexl-program-hero"><div class="lexl-program-hero-content"><div class="lexl-eyebrow">TRÄNINGSPROGRAM</div><h1>${esc(p.name)}</h1><p>${groupNames(p).length?'Cirkel och styrketräning':'Fristående övningar'}</p><div class="lexl-program-metrics"><span>${lexlIcon('exercises')} ${p.exercises.length} övningar</span><span>${lexlIcon('sets')} ${p.exercises.reduce((n,e)=>n+(Number(e.sets)||0),0)} set</span>${groupNames(p).length?`<span>${lexlIcon('circle')} ${groupNames(p).length} cirklar</span>`:''}</div><div class="lexl-program-main-action">${button(`${lexlIcon('play')} Starta pass`,`start('${p.id}')`,'primary')}</div><div class="lexl-program-secondary">${button(`${lexlIcon('edit')} Redigera`,`go('edit','${p.id}')`)}${button(`${lexlIcon('copy')} Kopiera`,`duplicate('${p.id}')`)}${button(`${lexlIcon('plus')} Registrera äldre pass`,`startRetrospective('${p.id}')`)}</div></div></div>${resume}<div class="lexl-exercises-heading"><h2 class="lexl-section-title">Övningar</h2><button class="lexl-expand-all" type="button" onclick="toggleAllProgramInstructions()" id="lexl-expand-toggle" aria-expanded="false"><span class="lexl-expand-label">Visa alla instruktioner</span><span class="lexl-chevron" aria-hidden="true">${lexlIcon('chevron_right')}</span></button></div><div class="lexl-exercise-list">${p.exercises.map((e,i)=>`<article class="lexl-exercise-card ${e.circleGroup?`lexl-program-circle lexl-circle-${esc(e.circleGroup)}`:``}">${e.circleGroup&&(i===0||p.exercises[i-1].circleGroup!==e.circleGroup)?`<div class="lexl-circle-band">${lexlIcon('circle')} CIRKEL ${esc(lexlCircleLabel(e.circleGroup))}</div>`:``}<div class="lexl-exercise-summary"><div class="lexl-exercise-body"><h3>${esc(e.name)}</h3><div class="lexl-exercise-tags"><span>${lexlIcon('sets')} ${esc(e.sets)} set</span><span>${lexlIcon('reps')} ${esc(e.reps)} reps</span><span>${e.circleGroup?lexlIcon('circle')+' Cirkel '+esc(lexlCircleLabel(e.circleGroup)):'Fristående'}</span></div></div></div><button class="lexl-instruction-toggle" type="button" aria-expanded="false" onclick="toggleProgramInstruction(this)">${lexlIcon('instructions')}<span class="lexl-instruction-label">Visa instruktion</span><span class="lexl-chevron" aria-hidden="true">${lexlIcon('chevron_right')}</span></button><div class="lexl-instruction-panel" hidden>${EXERCISE_IMAGES[e.id]?`<img src="${EXERCISE_IMAGES[e.id]}" alt="Instruktionsbild för ${esc(e.name)}" loading="lazy">`:'<p>Ingen separat instruktionsbild finns för denna övning.</p>'}${e.note?`<p>${esc(e.note)}</p>`:''}${button('Öppna fullständig instruktion',`showRef('${p.id}',${i})`,'mini')}</div></article>`).join('')}</div>${p.pages.length?`<div class="lexl-program-pt">${button('Visa PT-bilder',"refOpen=!refOpen;render()")}${refOpen?p.pages.map(i=>`<img class="reference" src="${PAGES[i]}" loading="lazy">`).join(''):''}</div>`:''}</div>`;
