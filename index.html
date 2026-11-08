@@ -567,6 +567,15 @@ input,textarea,select,[contenteditable="true"],[contenteditable=""],.editable-te
 :root[data-theme="light"] .lexl-stats-tile{background:#f3faf5}
 :root[data-theme="light"] .lexl-stats-panel{background:#f9fcfa}
 </style><style id="lexl-01114-theme-fixes">
+/* Headers and summary values follow the selected theme. */
+:root[data-theme="light"] .lexl-program-hero,:root[data-theme="light"] .lexl-history-hero,:root[data-theme="light"] .lexl-history-detail-hero{background:linear-gradient(130deg,var(--surface-soft),var(--surface));border-color:var(--surface-line);color:#17232e}
+:root[data-theme="light"] .lexl-program-hero h1{color:inherit}
+:root[data-theme="light"] .lexl-program-hero p,:root[data-theme="light"] .lexl-history-hero p,:root[data-theme="light"] .lexl-history-detail-hero p{color:var(--muted-text)}
+:root[data-theme="light"] .lexl-program-hero .lexl-eyebrow,:root[data-theme="light"] .lexl-history-view .lexl-history-eyebrow{color:var(--accent)}
+:root[data-theme="light"] .lexl-program-metrics span,:root[data-theme="light"] .lexl-history-stat{background:var(--surface-soft);border-color:var(--surface-line);color:#17232e}
+:root[data-theme="light"] .lexl-history-stat strong{color:var(--accent)}
+:root[data-theme="light"] .lexl-history-stat span{color:var(--muted-text)}
+:root[data-theme="dark"] .lexl-stats-tile strong{color:#74f4b5}
 /* Shared light-theme colors for components that previously kept dark surfaces. */
 :root[data-theme="light"]{--muted:#526271;--muted-text:#526271;--mint:#116849;--accent:#116849;--surface:#fff;--surface-soft:#edf9f1;--surface-line:#829e8e}
 :root[data-theme="light"] .modal-inner,:root[data-theme="light"] .modal .buttons{background:var(--surface);color:#17232e}
