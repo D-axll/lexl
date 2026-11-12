@@ -7,7 +7,7 @@ const row=(id='x',other={})=>({id,name:'Synthetic exercise',set:1,weight:'12.50'
 const history=()=>({name:'Synthetic program',date:'2026-11-01T22:30:00Z',rows:[row()],warmup:[{activity:'Synthetic',minutes:'1.30'}],totalMinutes:27,warmupMinutes:1.5,comments:{x:'Synthetic note'},circleGroups:{x:'1'},unknownHistorical:{volume:'do not recompute',seconds:123}});
 const fixture=()=>({programs:[{id:'p',name:'Synthetic program',rounds:3,type:'cirkel',exercises:[{id:'x',name:'Synthetic exercise',sets:3,reps:'8',circleGroup:'1'},{id:'y',name:'Another exercise',sets:2,circleGroup:'1'}]}],history:[history()],draft:null});
 const clone=D.copy;
-function preserves(original,actual){for(const [k,v] of Object.entries(original)){if(k==='rows'){v.forEach((r,i)=>preserves(r,actual.rows[i]))}else assert.deepEqual(actual[k],v,k)}}
+function preserves(original,actual){for(const [k,v] of Object.entries(original)){if(k==='rows'||k==='warmup'){v.forEach((r,i)=>preserves(r,actual[k][i]))}else assert.deepEqual(actual[k],v,k)}}
 
 test('legacy import preserves every original historical value and unknown field',()=>{const f=fixture(),next=D.importData(JSON.stringify(f));preserves(f.history[0],next.history[0]);assert.equal(next.history[0].rows[0].exerciseId,null);assert.equal(next.history[0].programId,null);assert.equal(next.history[0].workoutDate,null);assert.equal(next.history[0].recordedAt,null);assert.equal(next.history[0].calculationVersion,'legacy-unknown');assert.deepEqual(next.history[0].snapshot.record,f.history[0])});
 test('migration is idempotent and stable across independent loads',()=>{const f=fixture(),a=D.prepare(f),b=D.prepare(f);assert.deepEqual(a,b);assert.deepEqual(D.prepare(a),a);assert.equal(f.schemaVersion,undefined)});
@@ -53,4 +53,25 @@ test('UTF-8 size limit rejects an export that could not be reimported',()=>{
  const source=fixture();source.history[0].syntheticLargeText='å'.repeat(11*1024*1024);
  assert.throws(()=>D.exportData(source),/för stor/);
  assert.throws(()=>D.importData(JSON.stringify(source)),/för stor/);
+});
+
+test('1B optional draft identities are stable while every historical field stays unchanged',()=>{
+ const source=fixture();source.draft={...history(),id:'p'};const a=D.prepare(source),b=D.prepare(a);
+ assert.deepEqual(a,b);assert.ok(a.draft.rows[0].rowId);assert.ok(a.draft.warmup[0].warmupId);assert.deepEqual(a.history[0].snapshot.record,source.history[0]);assert.equal(source.draft.rows[0].rowId,undefined);
+});
+test('1B avoiding redundant snapshots preserves null snapshots and date provenance',()=>{
+ const source=D.prepare(fixture());source.history[0].snapshot=null;source.history[0].date='2026-10-20';delete source.history[0].workoutDate;delete source.history[0].workoutDateSource;
+ const next=D.prepare(source);assert.equal(next.history[0].workoutDateSource,'legacy-date-only');assert.equal(next.history[0].snapshot.record.snapshot,null);assert.doesNotThrow(()=>JSON.stringify(next));
+ const again=D.copy(next);delete again.history[0].workoutDate;delete again.history[0].workoutDateSource;assert.equal(D.prepare(again).history[0].workoutDateSource,'legacy-date-only');
+});
+test('1B native import still rejects missing required identities instead of silently repairing it',()=>{
+ const value=D.prepare(fixture());delete value.programs[0].exercises[0].exerciseId;assert.throws(()=>D.importData(JSON.stringify(value)),/Global övningsidentitet/);
+});
+test('1B generated snapshots must also obey the depth limit',()=>{
+ const source=fixture();let nested='synthetic';for(let i=0;i<29;i++)nested={x:nested};source.history[0].extra=nested;
+ assert.doesNotThrow(()=>D.validate(source,false));assert.throws(()=>D.prepare(source),/för stor eller för djup/);
+});
+test('1B snapshot duplication must not bypass the total value budget',()=>{
+ const source=fixture();source.history[0].extra=Array(250001).fill('synthetic');
+ assert.doesNotThrow(()=>D.validate(source,false));assert.throws(()=>D.prepare(source),/för stor eller för djup/);
 });

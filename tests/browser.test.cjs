@@ -672,3 +672,142 @@ test('integrated uncertain first-save read after activation blocks retry and res
  const saved=await page.evaluate(()=>lexlStore.readPrimaryRaw());assert.equal(JSON.parse(saved).programs.length,count+1);await page.evaluate(()=>newProgram());assert.equal(await page.evaluate(()=>lexlStore.readPrimaryRaw()),saved);
  await page.reload();await page.waitForFunction(()=>typeof lexlStore!=='undefined'&&lexlStore.initialized);assert.equal(await page.evaluate(()=>lexlStore.source),'indexeddb');assert.equal((await state(page)).programs.length,count+1);assert.equal((await state(page)).storageRevision,1);
 });
+
+// Etapp 1B: control the interleaving rather than relying on a slow machine/history.
+async function holdWrites(page){await page.evaluate(()=>{lexlWriteQueue=new Promise(resolve=>{window.syntheticRelease=()=>resolve(true)})})}
+async function releaseWrites(page){await page.evaluate(()=>{syntheticRelease();return lexlWriteQueue});await page.evaluate(()=>Promise.resolve())}
+
+test('1B rapid add-set and real weight/reps events keep the original stable target',async t=>{
+ const {page,errors}=await isolated(t);await page.evaluate(()=>start('synthetic-p'));
+ const target=await page.evaluate(()=>state.draft.rows[2].rowId);await holdWrites(page);
+ await page.getByRole('button',{name:'＋ Lägg till set',exact:true}).first().click();
+ await page.locator('#workout-row-2-weight').fill('99');await page.locator('#workout-row-2-weight').press('Tab');
+ await page.locator('#workout-row-2-reps').fill('17');await page.locator('#workout-row-2-reps').press('Tab');
+ await releaseWrites(page);
+ const saved=JSON.parse(await raw(page)).draft;
+ assert.ok(target);assert.equal(saved.rows.find(r=>r.rowId===target).weight,'99');assert.equal(saved.rows.find(r=>r.rowId===target).reps,'17');
+ assert.notEqual(saved.rows[2].rowId,target);assert.notEqual(saved.rows[2].weight,'99');assert.notEqual(saved.rows[2].reps,'17');assert.equal(new Set(saved.rows.map(r=>r.rowId)).size,4);assert.deepEqual(errors,[]);
+});
+
+test('1B in-flight save preserves uncommitted input, focus and honest status',async t=>{
+ const {page,errors}=await isolated(t);await page.evaluate(()=>start('synthetic-p'));await holdWrites(page);
+ await page.locator('#workout-row-0-weight').fill('25.5');await page.locator('#workout-row-0-weight').press('Tab');
+ await page.locator('#workout-row-0-reps').fill('77');await releaseWrites(page);
+ assert.equal(await page.locator('#workout-row-0-reps').inputValue(),'77');assert.equal(await page.locator('#workout-row-0-reps').evaluate(n=>n===document.activeElement),true);
+ assert.equal((await state(page)).draft.rows[0].reps,'8');assert.equal(await page.locator('#status').textContent(),'Osparad inmatning');
+ await page.locator('#workout-row-0-reps').press('Tab');await page.evaluate(()=>lexlWriteQueue);await page.waitForFunction(()=>document.getElementById('status').textContent==='Sparat lokalt');
+ assert.equal(JSON.parse(await raw(page)).draft.rows[0].reps,'77');assert.deepEqual(errors,[]);
+});
+
+test('1B comment text selection and navigation preserve unsaved input through rerenders',async t=>{
+ const {page}=await isolated(t);await page.evaluate(()=>start('synthetic-p'));await holdWrites(page);
+ await page.locator('#workout-row-0-weight').fill('26');await page.locator('#workout-row-0-weight').press('Tab');
+ const comment=page.locator('#workout-comment-0');await comment.fill('Synthetic unsaved note');await comment.evaluate(n=>n.setSelectionRange(3,9));await releaseWrites(page);
+ assert.equal(await comment.inputValue(),'Synthetic unsaved note');assert.deepEqual(await comment.evaluate(n=>[n===document.activeElement,n.selectionStart,n.selectionEnd]),[true,3,9]);
+ await page.evaluate(()=>{go('history');go('workout')});assert.equal(await comment.inputValue(),'Synthetic unsaved note');
+ await comment.press('Tab');await page.evaluate(()=>lexlWriteQueue);assert.equal(JSON.parse(await raw(page)).draft.comments['synthetic-x'],'Synthetic unsaved note');
+});
+
+test('1B removed row rejects queued update without retargeting another set',async t=>{
+ const {page}=await isolated(t);await page.evaluate(()=>start('synthetic-p'));await holdWrites(page);
+ await page.getByRole('button',{name:'− Ta bort sista setet',exact:true}).first().click();
+ await page.locator('#workout-row-1-weight').fill('99');await page.locator('#workout-row-1-weight').press('Tab');await releaseWrites(page);
+ assert.equal(JSON.parse(await raw(page)).draft.rows.length,2);assert.equal(JSON.parse(await raw(page)).draft.rows.some(r=>r.weight==='99'),false);
+ assert.match(await page.locator('#data-error').textContent(),/tagits bort/);
+});
+
+test('1B warmup deletion cannot redirect a queued update to a different item',async t=>{
+ const {page}=await isolated(t);await page.evaluate(async()=>{await start('synthetic-p');await addWarm();await addWarm()});
+ const id=await page.evaluate(()=>state.draft.warmup[1].warmupId);await holdWrites(page);
+ await page.getByRole('button',{name:'Ta bort',exact:true}).first().click();await page.locator('#warm-1-minutes').fill('7');await page.locator('#warm-1-minutes').press('Tab');await releaseWrites(page);
+ const warm=JSON.parse(await raw(page)).draft.warmup;assert.equal(warm.length,1);assert.equal(warm[0].warmupId,id);assert.equal(warm[0].minutes,7);
+});
+
+async function alterRecord(page,key,edit){return page.evaluate(async({key,edit})=>{
+ await new Promise((resolve,reject)=>{const r=indexedDB.open('lexl-training-schema1',1);r.onerror=()=>reject(r.error);r.onsuccess=()=>{const db=r.result,tx=db.transaction('records','readwrite'),store=tx.objectStore('records'),g=store.get(key);g.onsuccess=()=>{const b=g.result;if(edit==='content'){const value=JSON.parse(b.raw);value.history[0].rows[0].weight='888';b.raw=JSON.stringify(value)}else if(edit==='revision'){b.revision++;b.savedAtRevision++}else b.sha256='0'.repeat(64);store.put(b,key)};tx.oncomplete=()=>{db.close();resolve()};tx.onabort=()=>reject(tx.error)}});
+ },{key,edit})}
+for(const edit of ['content','revision','receipt'])test('1B rolling backup rejects '+edit+' corruption and preserves primary',async t=>{
+ const {page}=await isolated(t);await page.evaluate(async()=>{await start('synthetic-p');await upd(0,'weight','25.5')});const before=await raw(page);
+ await alterRecord(page,edit==='receipt'?'backup-receipt:previous':'previous',edit);
+ const error=await page.evaluate(async()=>{try{await lexlStore.recoveryRaw();return ''}catch(e){return e.message}});assert.match(error,/kontrollsumma|revision/);assert.equal(await raw(page),before);
+});
+
+test('1B damaged permanent backup blocks writes and retains last valid revision',async t=>{
+ const {page}=await isolated(t);await page.evaluate(()=>start('synthetic-p'));await alterRecord(page,'original','receipt');const before=await raw(page);
+ await page.evaluate(()=>upd(0,'weight','99'));assert.equal(await raw(page),before);assert.equal(await page.locator('#status').textContent(),'Inte sparat');
+});
+
+test('1B service worker preserves foreign caches and falls back on uncached offline navigation',async t=>{
+ const {page,context,errors}=await isolated(t,{serviceWorkers:'allow',init:async()=>{await caches.open('lexl-production-synthetic-sentinel');await caches.open('lexl-scope:another-installation:old')}});
+ await page.evaluate(()=>navigator.serviceWorker.ready);await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
+ const names=await page.evaluate(()=>caches.keys());assert.ok(names.includes('lexl-production-synthetic-sentinel'));assert.ok(names.includes('lexl-scope:another-installation:old'));
+ await context.setOffline(true);await page.goto(url+'/?synthetic-uncached-offline=1');await page.waitForFunction(()=>typeof lexlStore!=='undefined'&&lexlStore.initialized);
+ assert.equal((await state(page)).history[0].rows[0].weight,'7.5');assert.deepEqual(errors,[]);
+});
+
+test('1B invalid date input is retained and never reported as saved',async t=>{
+ const {page}=await isolated(t);await page.evaluate(()=>start('synthetic-p'));const before=await raw(page);
+ await page.locator('#workout-date').fill('');await page.locator('#workout-date').press('Tab');await page.evaluate(()=>lexlWriteQueue);
+ assert.equal(await raw(page),before);assert.equal(await page.locator('#status').textContent(),'Osparad inmatning');await page.evaluate(()=>render());assert.equal(await page.locator('#workout-date').inputValue(),'');
+});
+
+test('1B unblurred input survives a verified rollback package as explicit review data',async t=>{
+ const {page}=await isolated(t);await page.evaluate(()=>start('synthetic-p'));await page.locator('#workout-row-0-reps').fill('77');
+ const result=await page.evaluate(async()=>{const snapshot=lexlUnsavedSnapshot();const bundle=await lexlStore.exportBeforeRollback({unsavedRaw:JSON.stringify(snapshot)});const bytes=LEXLBackupPackage.encode(bundle),decoded=LEXLBackupPackage.decode(bytes);return {verified:await lexlStore.verifyBundle(decoded),unsaved:JSON.parse(decoded.files['unsaved-work.json']),saved:JSON.parse(decoded.files['indexeddb-01115.json'])}});
+ assert.equal(result.verified.verified,true);assert.equal(result.saved.draft.rows[0].reps,'8');assert.equal(result.unsaved.pendingInputReview.fields[0].value,'77');assert.match(result.unsaved.pendingInputReview.warning,/Inte automatiskt/);
+});
+
+test('1B real form write error retains typed input and retry clears unsaved status',async t=>{
+ const {page}=await isolated(t);await page.evaluate(()=>{return start('synthetic-p')});
+ await page.evaluate(()=>{window.syntheticPut=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(v,k){if(k==='current')throw new DOMException('Synthetic quota','QuotaExceededError');return syntheticPut.call(this,v,k)}});
+ await page.locator('#workout-row-0-weight').fill('99');await page.locator('#workout-row-0-weight').press('Tab');await page.evaluate(()=>lexlWriteQueue);
+ assert.equal(await page.locator('#workout-row-0-weight').inputValue(),'99');assert.equal(await page.locator('#status').textContent(),'Inte sparat');
+ await page.evaluate(()=>{IDBObjectStore.prototype.put=syntheticPut});await page.getByRole('button',{name:'Försök spara osparat arbete igen'}).click();await page.waitForFunction(()=>document.getElementById('status').textContent==='Sparat lokalt');assert.equal(JSON.parse(await raw(page)).draft.rows[0].weight,'99');
+});
+
+test('1B valid old backups use independent proof, and unverifiable old content is rejected',async t=>{
+ const {page}=await isolated(t);await page.evaluate(async()=>{await start('synthetic-p');await upd(0,'weight','25')});
+ await page.evaluate(async()=>{await new Promise((resolve,reject)=>{const r=indexedDB.open('lexl-training-schema1');r.onsuccess=()=>{const db=r.result,tx=db.transaction('records','readwrite'),s=tx.objectStore('records');for(const key of ['original','previous']){const g=s.get(key);g.onsuccess=()=>s.put({format:'lexl-raw-backup-v1',raw:g.result.raw},key);s.delete('backup-receipt:'+key)}tx.oncomplete=()=>{db.close();resolve()};tx.onabort=()=>reject(tx.error)}})});
+ assert.equal(await page.evaluate(()=>lexlStore.recoveryRaw('original')),JSON.stringify(f()));assert.ok(JSON.parse(await page.evaluate(()=>lexlStore.recoveryRaw())).draft);
+ await page.evaluate(()=>upd(0,'weight','26'));assert.equal(JSON.parse(await raw(page)).draft.rows[0].weight,'26');
+ await page.evaluate(async()=>{const payload={format:'lexl-raw-backup-v1',raw:JSON.stringify({...state,storageRevision:999})};let error='';try{await LEXLData.verifyRecovery(payload,null)}catch(e){error=e.message}if(!error.includes('oberoende'))throw Error(error||'Accepted unverified backup')});
+});
+
+test('1B backup receipt write failure aborts the complete transaction',async t=>{
+ const {page}=await isolated(t);await page.evaluate(()=>start('synthetic-p'));const before=await raw(page),backup=await page.evaluate(()=>lexlStore.recoveryRaw());
+ await page.evaluate(()=>{const put=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(v,k){if(k==='backup-receipt:previous')throw new DOMException('Synthetic quota','QuotaExceededError');return put.call(this,v,k)}});
+ await page.evaluate(()=>upd(0,'weight','99'));assert.equal(await raw(page),before);assert.equal(await page.evaluate(()=>lexlStore.recoveryRaw()),backup);
+});
+
+test('1B active earlier stage-1 draft without row identities remains readable and safely writable',async t=>{
+ const fixture=f();fixture.draft={id:'synthetic-p',name:'Synthetic old draft',started:'2026-10-20T10:00:00Z',rows:[{id:'synthetic-x',name:'Synthetic exercise',set:1,reps:'8',weight:'10',done:false}],warmup:[{activity:'Synthetic rowing',minutes:2}],comments:{},circleGroups:{}};
+ const {page}=await isolated(t,{raw:JSON.stringify(fixture)});
+ await page.evaluate(async()=>{const hash=async text=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text))),b=>b.toString(16).padStart(2,'0')).join('');
+ const text=await lexlStore.readPrimaryRaw(),value=JSON.parse(text);value.draft.rows.forEach(r=>delete r.rowId);value.draft.warmup.forEach(w=>delete w.warmupId);const raw=JSON.stringify(value),digest=await hash(raw);
+ await new Promise((resolve,reject)=>{const r=indexedDB.open('lexl-training-schema1');r.onsuccess=()=>{const db=r.result,tx=db.transaction('records','readwrite'),s=tx.objectStore('records'),m=s.get('activation');m.onsuccess=()=>{const marker=m.result;marker.copySha256=digest;s.put(marker,'activation');const p=s.get('proposal:'+marker.proposalId);p.onsuccess=()=>s.put({...p.result,copyRaw:raw,copySha256:digest},'proposal:'+marker.proposalId)};const c=s.get('current');c.onsuccess=()=>s.put({...c.result,raw},'current');const receipt=s.get('receipt:1');receipt.onsuccess=()=>s.put({...receipt.result,digest},'receipt:1');tx.oncomplete=()=>{db.close();resolve()};tx.onabort=()=>reject(tx.error)}});
+ });
+ await page.reload();await page.waitForFunction(()=>lexlStore.initialized);assert.equal(await page.evaluate(()=>lexlStore.blocked?.message||''),'');assert.ok((await state(page)).draft.rows[0].rowId);
+ await page.evaluate(()=>upd(0,'weight','33'));assert.equal(JSON.parse(await raw(page)).draft.rows[0].weight,'33');assert.equal(await page.evaluate(key=>localStorage.getItem(key),key),JSON.stringify(fixture));
+});
+
+for(const target of ['backup','current'])test('1B reused verification and writer still reject changed '+target+' content',async t=>{
+ const {page}=await isolated(t);await page.evaluate(async()=>{await start('synthetic-p');await upd(0,'weight','25')});const before=await raw(page);
+ await page.evaluate(async target=>{await new Promise((resolve,reject)=>{const r=indexedDB.open('lexl-training-schema1');r.onsuccess=()=>{const db=r.result,tx=db.transaction('records','readwrite'),s=tx.objectStore('records'),m=s.get('activation');m.onsuccess=()=>{const key=target==='current'?'current':'backup:'+m.result.proposalId,g=s.get(key);g.onsuccess=()=>{const record=g.result;if(target==='current'){const state=JSON.parse(record.raw);state.history[0].rows[0].weight='888';record.raw=JSON.stringify(state)}else{const payload=JSON.parse(record.payload),source=JSON.parse(payload.legacyRaw);source.history[0].rows[0].weight='888';payload.legacyRaw=JSON.stringify(source);record.payload=JSON.stringify(payload)}s.put(record,key)}};tx.oncomplete=()=>{db.close();resolve()};tx.onabort=()=>reject(tx.error)}})},target);
+ const changed=await raw(page);await page.evaluate(()=>upd(0,'weight','99'));assert.equal(await raw(page),changed);assert.equal(await page.locator('#status').textContent(),'Inte sparat');assert.notEqual((await state(page)).draft.rows[0].weight,'99');if(target==='backup')assert.equal(changed,before);
+});
+
+test('1B old unactivated proposal is stopped before copying if its serialization needs new identities',async t=>{
+ const fixture=f();fixture.draft={id:'synthetic-p',name:'Synthetic draft',started:'2026-10-20T10:00:00Z',rows:[{id:'synthetic-x',name:'Synthetic exercise',set:1,weight:'10',reps:'8'}],warmup:[],comments:{},circleGroups:{}};
+ const {page}=await isolated(t,{raw:JSON.stringify(fixture),activate:false});
+ await page.evaluate(async()=>{await lexlPrepareTransition();await new Promise((resolve,reject)=>{const r=indexedDB.open('lexl-training-schema1');r.onsuccess=()=>{const db=r.result,tx=db.transaction('records','readwrite'),s=tx.objectStore('records'),g=s.get('proposal:'+lexlMigrationSummary.id);g.onsuccess=()=>{const proposal=g.result,value=JSON.parse(proposal.copyRaw);value.draft.rows.forEach(r=>delete r.rowId);window.syntheticOldProposal={...proposal,copyRaw:JSON.stringify(value)}};tx.oncomplete=()=>{db.close();resolve()};tx.onabort=()=>reject(tx.error)}});
+ const p=syntheticOldProposal;p.copySha256=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(p.copyRaw))),b=>b.toString(16).padStart(2,'0')).join('');
+ await new Promise((resolve,reject)=>{const r=indexedDB.open('lexl-training-schema1');r.onsuccess=()=>{const db=r.result,tx=db.transaction('records','readwrite');tx.objectStore('records').put(p,'proposal:'+p.id);tx.oncomplete=()=>{db.close();resolve()};tx.onabort=()=>reject(tx.error)}});
+ lexlMigrationConsent=true;document.getElementById('transition-consent').checked=true;await lexlApproveTransition();});
+ assert.equal(await page.evaluate(()=>lexlStore.readPrimaryRaw()),null);assert.match(await page.locator('#data-error').textContent(),/äldre modell/);assert.equal(await page.evaluate(key=>localStorage.getItem(key),key),JSON.stringify(fixture));
+});
+
+test('1B application gate rejects unsafe candidate values before JSON can normalize them away',async t=>{
+ const {page}=await isolated(t);const before=await raw(page);
+ const error=await page.evaluate(async()=>{const candidate=LEXLData.copy(state);candidate.history[0].extra.unsafe=Infinity;try{await lexlStore.commit(candidate);return ''}catch(e){return e.message}});
+ assert.match(error,/JSON-värde/);assert.equal(await raw(page),before);
+});

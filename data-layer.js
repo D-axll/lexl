@@ -39,6 +39,9 @@
   }
   function validate(input, complete = true) {
     safeTree(input);
+    return validateShape(input, complete);
+  }
+  function validateShape(input, complete = true) {
     if (!object(input) || !Array.isArray(input.programs) || !Array.isArray(input.history)) fail('Program och historik måste vara listor.');
     if (own(input, 'schemaVersion') && input.schemaVersion !== SCHEMA_VERSION) fail('Schemaversionen stöds inte.');
     if (own(input, 'calculationVersion') && !['legacy-unknown', CALCULATION_VERSION].includes(input.calculationVersion)) fail('Beräkningsversionen stöds inte.');
@@ -126,11 +129,12 @@
       }
     }
     function decorate(h, index, draft) {
-      const original = copy(h);
+      const hadWorkoutDate = !!h.workoutDate;
+      const original = h.snapshot == null || h.sessionId === undefined ? copy(h) : null;
       h.sessionId ??= 'legacy-session:' + index + ':' + fingerprint(JSON.stringify(original));
       if (!own(h, 'programId')) h.programId = id(h.id) ? h.id : null;
       if (!own(h, 'workoutDate')) h.workoutDate = legacyDate(h);
-      h.workoutDateSource ??= h.workoutDate ? (original.workoutDate ? 'explicit' : 'legacy-date-only') : 'unknown';
+      h.workoutDateSource ??= h.workoutDate ? (hadWorkoutDate ? 'explicit' : 'legacy-date-only') : 'unknown';
       h.calculationVersion ??= 'legacy-unknown';
       h.recordedAt ??= null; // Legacy date may be a training date; do not invent a registration time.
       h.snapshot ??= { source: 'legacy-record', record: original };
@@ -141,7 +145,13 @@
         if (!own(r, 'slotId')) r.slotId = matches.length === 1 ? matches[0].slotId : null;
         if (!own(r, 'exerciseId')) r.exerciseId = matches.length === 1 ? matches[0].exerciseId : null;
       }
-      if (draft) { h.warmup ??= []; h.comments ??= {}; h.circleGroups ??= {}; }
+      if (draft) {
+        h.warmup ??= []; h.comments ??= {}; h.circleGroups ??= {};
+        h.rows.forEach((r, i) => { r.rowId ??= 'row:' + legacyKey(h.sessionId, i); });
+        h.warmup.forEach((w, i) => { w.warmupId ??= 'warm:' + legacyKey(h.sessionId, i); });
+        unique(h.rows.map(r => r.rowId), 'utkastets set-ID:n');
+        unique(h.warmup.map(w => w.warmupId), 'utkastets uppvärmnings-ID:n');
+      }
     }
     next.history.forEach((h, i) => decorate(h, i, false));
     if (next.draft) decorate(next.draft, 'draft', true);
@@ -160,7 +170,7 @@
     if (new TextEncoder().encode(text).byteLength > MAX_FILE_BYTES) fail('Exporten är för stor för säker återimport.');
     return text;
   }
-  function importData(raw) { const value = parse(raw); validate(value); return prepare(value); }
+  function importData(raw) { const value = parse(raw); validateShape(value); return prepare(value); }
   function duplicateProgram(program, uuid) {
     const p = copy(program);
     p.id = uuid(); p.programId = p.id; p.name += ' (kopia)';
@@ -176,15 +186,37 @@
     if (record.programId !== program.id) return false;
     return row.slotId === exercise.slotId && row.exerciseId === exercise.exerciseId;
   }
+  const sha256 = async text => Array.from(new Uint8Array(await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))), b => b.toString(16).padStart(2, '0')).join('');
+  async function verifyRecovery(record, receipt, {legacyRaw, stateReceipt} = {}) {
+    if (record?.format === 'lexl-raw-backup-v1') {
+      if (record.raw !== null && typeof record.raw !== 'string') fail('Ogiltig äldre återställningskopia.');
+      let value;
+      try { value = record.raw === null ? null : parse(record.raw); if(value !== null) validate(value); }
+      catch(error) { fail('Återställningskopian kunde inte valideras: ' + error.message); }
+      // Never invent a checksum for an unproven old backup. Bind it to an
+      // independently verified original source or an existing state receipt.
+      if (legacyRaw !== undefined && record.raw === legacyRaw) return record.raw;
+      if (value && stateReceipt?.revision === value.storageRevision && stateReceipt.digest === await sha256(record.raw)) return record.raw;
+      fail('Äldre återställningskopia saknar oberoende verifierbar kontrollsumma och revision. Den bevaras för granskning.');
+    }
+    if (!object(record) || record.format !== 'lexl-raw-backup-v2' || !Number.isSafeInteger(record.revision) || record.revision < 0 || record.savedAtRevision !== record.revision + 1 || (record.raw !== null && typeof record.raw !== 'string')) fail('Återställningskopian saknar verifierbar kontrollsumma eller revision. Kopian bevaras; använd det verifierade återgångspaketet för granskning.');
+    const digest = await sha256(JSON.stringify({raw:record.raw,revision:record.revision,savedAtRevision:record.savedAtRevision}));
+    if (record.sha256 !== digest || receipt?.sha256 !== digest || receipt.revision !== record.revision || receipt.savedAtRevision !== record.savedAtRevision) fail('Återställningskopians kontrollsumma eller revision stämmer inte.');
+    if (record.raw !== null) {
+      const value = parse(record.raw); validate(value);
+      if ((value.storageRevision ?? 0) !== record.revision) fail('Återställningskopians innehåll har fel revision.');
+    }
+    return record.raw;
+  }
   // All training-data writes are confined to IndexedDB. localStorage is read-only.
-  // Existing legacy data require an explicit file import before IndexedDB activation.
+  // The app-facing transition gate owns consent and activation; this is the internal CAS adapter.
   function createStore({ storage, legacyKey, experimentalKey = null, defaults,
     dbName = 'lexl-training-schema1', getIndexedDB = () => globalThis.indexedDB,
     onChange = () => {} }) {
-    const RECORD_FORMAT = 'lexl-idb-state-v1', BACKUP_FORMAT = 'lexl-raw-backup-v1';
+    const RECORD_FORMAT = 'lexl-idb-state-v1', BACKUP_FORMAT = 'lexl-raw-backup-v2';
     let raw = null, legacyRaw = null, nativeRaw = null, nativeRevision = 0;
     let state = null, blocked = null, initialized = false, source = 'loading', db = null;
-    let channel = null, experimentalRaw = null;
+    let channel = null, experimentalRaw = null, verifiedOriginal = null;
     try {
       legacyRaw = storage.getItem(legacyKey);
       experimentalRaw = experimentalKey ? storage.getItem(experimentalKey) : null;
@@ -199,14 +231,6 @@
       const value = prepare(parse(record.raw));
       if (value.storageRevision !== record.revision) fail('Lagringsrevisionerna stämmer inte.');
       return value;
-    }
-    function decodeBackup(record) {
-      if (!object(record) || record.format !== BACKUP_FORMAT || (record.raw !== null && typeof record.raw !== 'string')) fail('Ogiltig återställningskopia.');
-      if (record.raw !== null) {
-        try { validate(parse(record.raw)); }
-        catch (error) { fail('Återställningskopian kunde inte valideras: ' + error.message); }
-      }
-      return record.raw;
     }
     function openDatabase() {
       return new Promise((resolve, reject) => {
@@ -291,7 +315,14 @@
       const bytes = new TextEncoder().encode(text);
       const digest = Array.from(new Uint8Array(await globalThis.crypto.subtle.digest('SHA-256', bytes)), b => b.toString(16).padStart(2, '0')).join('');
       const proposed = { format: RECORD_FORMAT, revision: next.storageRevision, raw: text, legacyRaw };
-      const backup = { format: BACKUP_FORMAT, raw: previousRaw };
+      const backup = { format: BACKUP_FORMAT, raw: previousRaw, revision: expectedRevision, savedAtRevision: next.storageRevision };
+      backup.sha256 = await sha256(JSON.stringify({raw:backup.raw,revision:backup.revision,savedAtRevision:backup.savedAtRevision}));
+      const backupReceipt = {sha256:backup.sha256,revision:backup.revision,savedAtRevision:backup.savedAtRevision};
+      const originals = await readRecords(['original','backup-receipt:original']);
+      const originalIdentity = JSON.stringify(originals);
+      if (originals.original !== undefined && originalIdentity !== verifiedOriginal) {
+        await verifyRecovery(originals.original, originals['backup-receipt:original'], {legacyRaw}); verifiedOriginal = originalIdentity;
+      }
       await new Promise((resolve, reject) => {
         let tx, cause;
         const abort = error => { cause = error; try { tx.abort(); } catch {} };
@@ -305,27 +336,30 @@
           current.onsuccess = () => {
             try {
               const actual = current.result;
-              if (actual !== undefined) { decodeRecord(actual); if (actual.legacyRaw !== legacyRaw) throw conflict(); }
+              if (actual !== undefined && actual.format !== RECORD_FORMAT) fail('Ogiltig IndexedDB-post.');
+              if (actual !== undefined && actual.legacyRaw !== legacyRaw) throw conflict();
               if (actual === undefined ? expectedRaw !== null : actual.revision !== expectedRevision || actual.raw !== expectedRaw) throw conflict();
               if (storage.getItem(legacyKey) !== legacyRaw) throw conflict();
               const original = records.get('original');
               original.onsuccess = () => {
                 try {
-                  if (original.result === undefined) records.put(backup, 'original');
-                  else decodeBackup(original.result);
-                  records.put(backup, 'previous');
+                  if (JSON.stringify(original.result) !== JSON.stringify(originals.original)) throw conflict();
+                  if (original.result === undefined) { records.put(backup, 'original'); records.put(backupReceipt, 'backup-receipt:original'); }
+                  records.put(backup, 'previous'); records.put(backupReceipt, 'backup-receipt:previous');
                   records.put(proposed, 'current');
                   records.put({ revision: next.storageRevision, token, digest }, receiptKey);
                   if (next.storageRevision > 32) records.delete('receipt:' + (next.storageRevision - 32));
                   // Read back exact data and backups in this same atomic transaction.
                   const check = records.get('current');
                   check.onsuccess = () => {
-                    try { if (check.result?.raw !== text || check.result?.revision !== next.storageRevision) fail('Skrivningen kunde inte verifieras.'); decodeRecord(check.result); }
+                    try { if (JSON.stringify(check.result) !== JSON.stringify(proposed)) fail('Skrivningen kunde inte verifieras.'); }
                     catch (error) { abort(error); }
                   };
                   for (const key of ['original', 'previous']) {
+                    const checkBinding = records.get('backup-receipt:' + key);
+                    checkBinding.onsuccess = () => { try { const expected = key === 'original' && originals.original !== undefined ? originals['backup-receipt:original'] : backupReceipt; if (JSON.stringify(checkBinding.result) !== JSON.stringify(expected)) fail('Återställningskopians revisionskvitto kunde inte verifieras.'); } catch (error) { abort(error); } };
                     const checkBackup = records.get(key);
-                    checkBackup.onsuccess = () => { try { decodeBackup(checkBackup.result); if (key === 'previous' && checkBackup.result.raw !== previousRaw) fail('Återställningskopian kunde inte verifieras.'); } catch (error) { abort(error); } };
+                    checkBackup.onsuccess = () => { try { const expected = key === 'original' && originals.original !== undefined ? originals.original : backup; if (JSON.stringify(checkBackup.result) !== JSON.stringify(expected)) fail('Återställningskopian kunde inte verifieras.'); } catch (error) { abort(error); } };
                   }
                 } catch (error) { abort(error); }
               };
@@ -340,7 +374,8 @@
         const receipt = verified[receiptKey];
         if (receipt?.token !== token || receipt.digest !== digest || receipt.revision !== next.storageRevision) fail('Transaktionens kvitto kunde inte verifieras.');
         const current = verified.current;
-        decodeRecord(current);
+        if (current?.raw !== text) decodeRecord(current);
+        else if (JSON.stringify(current) !== JSON.stringify(proposed)) fail('Det sparade tillståndets metadata kunde inte verifieras.');
         if (current.revision < next.storageRevision || (current.revision === next.storageRevision && current.raw !== text)) fail('Det sparade tillståndet kunde inte verifieras.');
       } catch (error) {
         // Never roll back here: that could overwrite a later tab's valid commit.
@@ -356,7 +391,10 @@
       await ready;
       if (!db) fail('IndexedDB är inte tillgängligt.');
       const name = which === 'original' ? 'original' : 'previous';
-      return decodeBackup((await readRecords([name]))[name]);
+      const records = await readRecords([name, 'backup-receipt:' + name]);
+      const oldRevision = records[name]?.format === 'lexl-raw-backup-v1' && records[name].raw !== null ? parse(records[name].raw).storageRevision : null;
+      const stateReceipt = Number.isSafeInteger(oldRevision) ? (await readRecords(['receipt:' + oldRevision]))['receipt:' + oldRevision] : null;
+      return verifyRecovery(records[name], records['backup-receipt:' + name], {legacyRaw, stateReceipt});
     }
     async function readPrimaryRaw() {
       await ready;
@@ -370,5 +408,5 @@
       close() { channel?.close(); db?.close(); } };
   }
   return { SCHEMA_VERSION, CALCULATION_VERSION, copy, freeze, parse, validate, prepare,
-    exportData, importData, duplicateProgram, newSession, rowMatches, createStore, date };
+    exportData, importData, duplicateProgram, newSession, rowMatches, createStore, date, verifyRecovery };
 });

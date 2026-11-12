@@ -1,5 +1,7 @@
 # LEXL 0.11.15 – slutrapport för etapp 1
 
+**Uppdatering etapp 1B:** Den tekniska granskningen identifierade inmatnings-, backup- och cachefel. Rättningar, aktuell testkörning och prestandamätning redovisas i [ETAPP1B-RATTNINGAR.md](ETAPP1B-RATTNINGAR.md). Rapporten nedan beskriver den ursprungliga etapp 1-leveransen; dess 103 tester är inte hela den senare rättningssviten.
+
 Status: **integrationen av den godkända planen och regressionstesterna är färdiga för granskning** på `dev/0.11.15`. Inga verkliga användardata har migrerats. Ingen push, merge, produktionspublicering eller etapp 2 har utförts.
 
 Godkänd produktionsbas: `0b49f20b165bab177fc1ab583509ffab744bf46f`. Utvecklingsbranchen skapades direkt från basen; `work` användes inte som utvecklingsbas. Implementationshistoriken och slutlig commit kan granskas med `git log`.

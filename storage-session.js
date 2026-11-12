@@ -55,7 +55,7 @@
    return state;
   }
   async function commit(candidate,{intent='change'}={}){
-   const next=D.prepare(candidate);await ensure();
+   D.validate(candidate,false);const next=D.copy(candidate);await ensure();
    if(source==='legacy-readonly')throw Error('Äldre data är skrivskyddade tills du uttryckligen godkänner den verifierade engångsövergången.');
    if(source==='first-start'){
     if(pending)throw Error('En tidigare sparning avbröts. Fortsätt verifieringen av den innan du registrerar något nytt.');

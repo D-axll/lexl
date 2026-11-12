@@ -1,5 +1,7 @@
 # Etapp 1 – användarstyrd engångsövergång och säker återgång
 
+**Etapp 1B:** Se [rättningsrapporten](ETAPP1B-RATTNINGAR.md) för starkare rullande backupkontroller, stabila uppdateringsmål, bevarad inmatning och aktuell testning. Övergångs- och återgångsprinciperna nedan gäller fortsatt. Osparade formulärvärden kan dessutom bevaras som uttryckligt granskningsunderlag i `unsaved-work.json`; de appliceras inte automatiskt på träningsdata.
+
 Status: **planen är slutligt godkänd av beställaren och integrerad inom etapp 1**. Implementation och regressionstester är färdiga för teknisk granskning. Ingen övergång av verkliga användardata, merge, push eller publicering har utförts.
 
 Principerna att bevara localStorage-originalet och använda transaktionssäker IndexedDB är godkända. Normal uppgradering kräver ingen manuell JSON-export/import. Denna plan ersätter därför den tidigare manuella planen som föreslagen normal uppgraderingsväg. Ingen merge, push, publicering eller etapp 2 ingår.

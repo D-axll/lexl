@@ -27,7 +27,7 @@
  }
  function create({ dbName = 'lexl-training-schema1', readLegacy, readRecovery = () => null, defaults = () => ({programs:[],history:[],draft:null}), getIndexedDB = () => root.indexedDB, onChange = () => {} }) {
   if (!D || !(dbName === 'lexl-training-schema1' || /^lexl-test-[a-zA-Z0-9-]+$/.test(dbName)) || typeof readLegacy !== 'function') fail('Ogiltig lagringskonfiguration.');
-  let db, opening, closed = false;
+  let db, opening, closed = false, writer = null, verifiedBackup = null, verifiedPlan = null;
   const sources = () => ({ legacyRaw: readLegacy(), recoveryRaw: readRecovery() });
   const open = () => {
    if(closed)return Promise.reject(Error('Databasen har bytt version eller stängts. Ladda om appen.'));
@@ -78,9 +78,11 @@
   }
   async function validateBackup(backup) {
    if (backup?.format !== 'lexl-transition-backup-v1' || typeof backup.payload !== 'string' || await hash(backup.payload) !== backup.sha256) fail('Säkerhetskopian kunde inte verifieras.');
+   const identity = JSON.stringify(backup);
+   if (verifiedBackup?.identity === identity) return verifiedBackup.value;
    const input = D.parse(backup.payload);
    const state = decodeSources(input.legacyRaw, input.recoveryRaw, defaults);
-   return { input, state };
+   const value = D.freeze({ input, state }); verifiedBackup = { identity, value }; return value;
   }
   async function proposal(id) {
    if (typeof id !== 'string' || !/^[a-zA-Z0-9-]+$/.test(id)) fail('Ogiltigt övergångs-ID.');
@@ -91,7 +93,7 @@
    if (p?.format !== 'lexl-transition-proposal-v1' || p.id !== id || !['first-start','legacy-transition'].includes(p.origin) || p.backupSha256 !== backup.sha256 || typeof p.copyRaw !== 'string') fail('Övergångsförslaget är ogiltigt.');
    const expected = p?.origin==='first-start' ? D.importData(p.copyRaw) : D.copy(verified.state); expected.storageRevision = 1;
    if(p?.origin==='first-start'&&(verified.input.legacyRaw!==null||verified.input.recoveryRaw!==null))fail('Felaktigt ursprung för första sparning.');
-   if (p.copyRaw !== JSON.stringify(expected) || p.copySha256 !== await hash(p.copyRaw)) fail('Den planerade kopian har ändrats.');
+   if ((p.copyRaw !== JSON.stringify(expected) && JSON.stringify(D.importData(p.copyRaw)) !== JSON.stringify(expected)) || p.copySha256 !== await hash(p.copyRaw)) fail('Den planerade kopian har ändrats.');
    return { p, backup, ...verified, rows, pkey, bkey };
   }
   async function prepare({ firstState = null } = {}) {
@@ -122,6 +124,7 @@
    const item = await proposal(id), { p, input, rows } = item;
    if (backupSha256 !== p.backupSha256) fail('Godkännandet avser inte den verifierade kopian.');
    if (!equal(sources(), input)) fail('Legacy-källan har ändrats. Ingen övergång aktiveras.');
+   if (!rows.current && JSON.stringify(D.importData(p.copyRaw)) !== p.copyRaw) fail('Övergångsförslaget kommer från en äldre modell och behöver granskas innan kopiering. Original och förslag bevaras.');
    if (rows.activation) {
     if (rows.activation.proposalId !== id) fail('En annan övergång är redan aktiverad.');
     return inspect(); // Idempotent retry; do not copy or reset the revision.
@@ -161,12 +164,20 @@
    // One snapshot of current + consent + backup + activation; no mixed revisions.
    const snapshot = await read(['activation', 'current', 'proposal:' + marker.proposalId, 'backup:' + marker.proposalId]);
    const p = snapshot['proposal:' + marker.proposalId], backup = snapshot['backup:' + marker.proposalId], current = snapshot.current;
-   const verified = await validateBackup(backup);
-   const planned = p?.origin==='first-start' ? D.importData(p.copyRaw) : D.copy(verified.state); planned.storageRevision = 1;
-   if(p?.origin==='first-start'&&(verified.input.legacyRaw!==null||verified.input.recoveryRaw!==null))fail('Felaktigt ursprung för första sparning.');
-   const expectedCopy = JSON.stringify(planned);
-   if (p?.format !== 'lexl-transition-proposal-v1' || p.id !== marker.proposalId || !['first-start','legacy-transition'].includes(p.origin) || p.copyRaw !== expectedCopy || marker.copySha256 !== await hash(expectedCopy)) fail('Övergångsunderlaget kunde inte verifieras.');
-   const state = D.importData(current?.raw);
+   // Memoize immutable transition evidence only after full verification. Exact
+   // serialized equality is required on every read; changed evidence is rechecked.
+   const proofIdentity = JSON.stringify([marker, p, backup]);
+   let verified;
+   if (verifiedPlan?.identity === proofIdentity) verified = verifiedPlan.value;
+   else {
+    verified = await validateBackup(backup);
+    const planned = p?.origin==='first-start' ? D.importData(p.copyRaw) : D.copy(verified.state); planned.storageRevision = 1;
+    if(p?.origin==='first-start'&&(verified.input.legacyRaw!==null||verified.input.recoveryRaw!==null))fail('Felaktigt ursprung för första sparning.');
+    const expectedCopy = JSON.stringify(planned);
+    if (p?.format !== 'lexl-transition-proposal-v1' || p.id !== marker.proposalId || !['first-start','legacy-transition'].includes(p.origin) || (p.copyRaw !== expectedCopy && JSON.stringify(D.importData(p.copyRaw)) !== expectedCopy) || marker.copySha256 !== await hash(p.copyRaw)) fail('Övergångsunderlaget kunde inte verifieras.');
+    verifiedPlan = {identity:proofIdentity,value:verified};
+   }
+   const state = writer?.raw === current?.raw ? writer.state : D.importData(current?.raw);
    if(snapshot.currentReceipt?.revision!==current.revision||typeof snapshot.currentReceipt.token!=='string'||snapshot.currentReceipt.digest!==await hash(current.raw))fail('Det sparade tillståndets SHA-256-kvitto kunde inte verifieras.');
    if (!equal(snapshot.activation, marker) || !p?.approved || marker.backupSha256 !== backup.sha256 || marker.copySha256 !== p.copySha256 || current.format !== 'lexl-idb-state-v1' || current.revision !== state.storageRevision || state.storageRevision < marker.revision || current.legacyRaw !== verified.input.legacyRaw) fail('Aktiveringen kunde inte verifieras.');
    if (current.revision === 1 && await hash(current.raw) !== marker.copySha256) fail('Den aktiverade kopian har ändrats.');
@@ -175,9 +186,9 @@
   async function commit(candidate) {
    const active = await inspect();
    if (active.primary !== 'indexeddb' || active.legacyChanged) fail('Skrivning kräver verifierad aktivering och oförändrad legacy-källa.');
-   const next = D.prepare(candidate);
-   const store = D.createStore({ dbName, legacyKey: 'min-traning-v1', storage: { getItem: () => readLegacy() }, defaults, getIndexedDB });
-   try { await store.ready; return await store.commit(next); } finally { store.close(); }
+   const next = candidate;
+   writer ??= D.createStore({ dbName, legacyKey: 'min-traning-v1', storage: { getItem: () => readLegacy() }, defaults, getIndexedDB });
+   await writer.ready; return writer.commit(next);
   }
   async function exportBeforeRollback({unsavedRaw=null}={}) {
    const sourceBefore = sources(), active = await inspect();
@@ -203,7 +214,15 @@
    if((await read(['current'])).current?.raw!==active.stateRaw||!equal(sources(),sourceBefore))fail('Data ändrades under exporten. Gör om exporten.');
    return bundle;
   }
-  return { prepare, review, confirm, inspect, commit, exportBeforeRollback, verifyBundle, exportPreparedBackup:async id=>JSON.stringify((await proposal(id)).backup,null,2), readPrimaryRaw:async()=>{const row=(await read(['current'])).current;return row===undefined?null:row.raw}, recoveryRaw:async(which='previous')=>{const name=which==='original'?'original':'previous';const r=(await read([name]))[name];if(r?.format!=='lexl-raw-backup-v1')fail('Ingen återställningskopia hittades.');if(r.raw!==null)D.importData(r.raw);return r.raw;}, close() { db?.close(); db = null; closed=true; } };
+  return { prepare, review, confirm, inspect, commit, exportBeforeRollback, verifyBundle, exportPreparedBackup:async id=>JSON.stringify((await proposal(id)).backup,null,2), readPrimaryRaw:async()=>{const row=(await read(['current'])).current;return row===undefined?null:row.raw}, recoveryRaw:async(which='previous')=>{const name=which==='original'?'original':'previous';const rows=await read([name,'backup-receipt:'+name]);
+   if(rows[name]?.format==='lexl-raw-backup-v1'){
+    const active=await inspect();if(active.primary!=='indexeddb')fail('Äldre backup kräver verifierad aktivering.');
+    const legacyRaw=D.parse(active.backup.payload).legacyRaw;
+    const revision=rows[name].raw===null?null:D.parse(rows[name].raw).storageRevision;
+    const stateReceipt=Number.isSafeInteger(revision)?(await read(['receipt:'+revision]))['receipt:'+revision]:null;
+    return D.verifyRecovery(rows[name],null,{legacyRaw,stateReceipt});
+   }
+   return D.verifyRecovery(rows[name],rows['backup-receipt:'+name]);}, close() { writer?.close(); db?.close(); db = null; closed=true; } };
  }
  async function verifyBundle({ manifestText, files }) {
   const manifest = D.parse(manifestText);
