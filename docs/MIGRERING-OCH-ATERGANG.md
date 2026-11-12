@@ -1,6 +1,6 @@
 # Etapp 1 – separat plan för dataövergång och återgång
 
-Status: för uttryckligt godkännande innan befintliga användare aktiverar den nya lagringen. Ingen övergång av verkliga data, merge eller publicering har utförts.
+Status: **Godkänd av användaren genom svaret ”Godkänn den manuella planen”.** Godkännandet gäller endast den manuella dataövergångs- och återgångsplanen. Ingen övergång av verkliga data, merge eller publicering har utförts.
 
 ## Vad som förblir läsbart i 0.11.14
 
@@ -38,6 +38,6 @@ En explicit import ersätter endast det nya tillståndet. Den ersätter inte den
 5. Om gamla localStorage-data har ändrats av en äldre app efter aktivering finns två självständiga datakällor. Exportera båda och granska skillnaderna innan någon manuell återställning eller sammanslagning.
 6. Att även ta med nya pass tillbaka till 0.11.14 kräver en separat konverteringsplan och tester mot exakt 0.11.14. Ingen sådan konvertering, automatisk synkning eller destruktiv nedgradering ingår i etapp 1.
 
-## Beslut som efterfrågas
+## Godkännandets omfattning
 
-Godkänn eller avvisa den manuella aktiveringen och återgången till det bevarade originalet enligt ovan, med uttrycklig förståelse att nya IndexedDB-uppgifter bevaras separat och inte automatiskt följer med till 0.11.14. Detta godkänner varken produktionspublicering, merge eller etapp 2.
+Användaren har godkänt den manuella aktiveringen och återgången till det bevarade originalet enligt ovan. Nya IndexedDB-uppgifter bevaras separat och följer inte automatiskt med till 0.11.14. Godkännandet innebär inte ett godkännande av implementationen av etapp 1, produktionspublicering, merge eller etapp 2. Ingen faktisk aktivering har utförts genom detta dokumentationsbeslut.
