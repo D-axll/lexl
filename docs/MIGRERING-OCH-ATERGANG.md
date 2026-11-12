@@ -1,14 +1,14 @@
-# Etapp 1 – förslag till användarstyrd engångsövergång och säker återgång
+# Etapp 1 – användarstyrd engångsövergång och säker återgång
 
-Status: **för slutlig granskning och godkännande; ingen aktivering för verkliga användare**.
+Status: **planen är slutligt godkänd av beställaren och integrerad inom etapp 1**. Implementation och regressionstester är färdiga för teknisk granskning. Ingen övergång av verkliga användardata, merge, push eller publicering har utförts.
 
-Principerna att bevara localStorage-originalet och använda transaktionssäker IndexedDB är godkända. Ett permanent krav på manuell JSON-export/import för normal uppgradering är inte godkänt. Denna plan ersätter därför den tidigare manuella planen som föreslagen normal uppgraderingsväg. Ingen merge, push, publicering eller etapp 2 ingår.
+Principerna att bevara localStorage-originalet och använda transaktionssäker IndexedDB är godkända. Normal uppgradering kräver ingen manuell JSON-export/import. Denna plan ersätter därför den tidigare manuella planen som föreslagen normal uppgraderingsväg. Ingen merge, push, publicering eller etapp 2 ingår.
 
-## Föreslagen normal uppgradering
+## Integrerad normal uppgradering
 
 1. **Identifiera och validera.** Läs exakt råtext från `min-traning-v1` samt eventuell äldre utkaståterställningsnyckel. Skilj saknade data från oläsbara eller strukturellt ogiltiga data. Visa antal program, historiska pass och om ett pågående pass/återställningspunkt finns. Vid ogiltiga data: skrivskydd, tydligt fel och möjlighet till råexport; ingen standarddata får ersätta originalet.
-2. **Skapa säkerhetskopia före samtycke.** Spara en separat versionsmärkt kopia av båda råtexterna och SHA-256-kontrollsumma. Bekräfta transaktionens slutförande, läs tillbaka kopian, kontrollera kontrollsumman och validera innehållet. Originalens formatering och okända säkra fält bevaras. En intern kopia är inte en extern katastrofbackup; extern export ska erbjudas, men någon manuell filrundtur ska inte krävas för normal uppgradering.
-3. **Begär uttryckligt användargodkännande.** Visa vad som kopieras, att originalet behålls och att framtida pass inte automatiskt blir läsbara i 0.11.14. Knapparna kan vara ”Fortsätt med säker övergång” och ”Inte nu”. Ett klick ska avse just den verifierade källbilden, inte ett allmänt framtida migrationsmedgivande. Det här individuella samtycket är separat från beställarens godkännande av planen.
+2. **Skapa säkerhetskopia före samtycke.** Spara en separat versionsmärkt kopia av båda råtexterna och SHA-256-kontrollsumma. Bekräfta transaktionens slutförande, läs tillbaka kopian, kontrollera kontrollsumman och validera innehållet. Originalens formatering och okända säkra fält bevaras. En intern kopia är inte en extern katastrofbackup. Gränssnittet erbjuder därför frivillig nedladdning av den exakt verifierade originalkopian före samtycket; någon manuell filrundtur krävs inte för normal uppgradering.
+3. **Begär uttryckligt användargodkännande.** Visa vad som kopieras, att originalet behålls och att framtida pass inte automatiskt blir läsbara i 0.11.14. Gränssnittet visar en godkännanderuta och knapparna ”Fortsätt med säker övergång” respektive ”Inte nu – fortsätt läsa”. Ett klick ska avse just den verifierade källbilden, inte ett allmänt framtida migrationsmedgivande. Det här individuella samtycket är separat från beställarens godkännande av planen.
 4. **Reservera övergången och kopiera.** Kontrollera åter källbilden och att inget annat appfönster har reserverat/aktiverat målet. Bevara samtycke och övergångs-ID. Kopiera till IndexedDB med befintligt transaktionslager, revision 1 och skrivkvitto. Äldre värden, rader, kommentarer, tider och cirkelkopplingar räknas inte om eller raderas. localStorage skrivs aldrig av övergången.
 5. **Verifiera före aktivering.** Vänta på `complete`, läs tillbaka kopian och jämför hela innehållet och SHA-256 mot förslaget. Validera schema, identiteter och revisionsnummer. Kontrollera att källan inte ändrats. En kopia som endast finns på disk är fortfarande **inaktiv**.
 6. **Aktivera först efter verifieringen.** Spara en aktiveringsmarkör i en transaktion som åter kontrollerar kopia, reservägare, samtycke och säkerhetskopia. Läs tillbaka markör och data. Först efter lyckad kontroll får appen välja IndexedDB som primär lagring. Varje senare uppstart måste också verifiera markör och tillstånd innan dessa används. Om slutlig läsning misslyckas får appen inte hävda att övergången lyckats; nästa start måste kontrollera på nytt.
@@ -44,7 +44,7 @@ Föreslaget återgångspaket innehåller:
 
 Om en gammal app därefter ändrat localStorage inkluderas även den aktuella råkällan separat, tydligt skild från originalbilden. Automatisk sammanslagning görs inte. Om legacy-källan ändras under exporten ska exportförsöket göras om.
 
-För användaren bör filerna samlas till en nedladdning med manifest, så att flera automatiska nedladdningar inte kan blockeras delvis av webbläsaren. Prototypen verifierar filuppsättningen och manifestet; slutlig paketering och användarflöde är ännu inte implementerade. Filernas kontrollsummor och struktur ska kunna kontrolleras igen efter att de sparats, genom att användaren väljer den sparade kopian. En lyckad generering/nedladdning ensam bevisar inte att alla filer finns kvar utanför webbläsaren.
+Filerna samlas nu till **en ZIP-nedladdning** med manifest. ZIP-transporten kontrollerar gränser, filnamn och CRC32; därefter verifieras SHA-256, schema och innehåll. Användaren väljer den faktiskt sparade ZIP-filen i appens kontrollfunktion för återverifiering. Python-standardbiblioteket verifierar också den faktiska nedladdningen i regressionstesterna. Ett intakt paket som avviker från appens aktuella data varnas som inaktuellt. Osparat arbete och en senare ändrad eller saknad äldre källa särredovisas. Ingen verifiering importerar eller skriver träningsdata.
 
 Varningen före återgång ska uttryckligen säga:
 
@@ -54,30 +54,18 @@ Om den aktuella legacy-källan har ändrats sedan övergången eller inte valide
 
 Efter verifierad extern export och klarlagd legacy-källa kan appkoden återgå till godkänd 0.11.14 genom separat godkänd versionshantering. Rätt service worker/version måste användas. Inga träningsposter, databaser eller webbplatsdata ska raderas. Nya IndexedDB-pass behålls både lokalt och externt. Att senare föra in dessa i 0.11.14 kräver en separat, verifierad konverteringsplan; det görs inte i etapp 1.
 
-## Isolerad prototyp och evidens
+## Integration och evidens
 
 `prototypes/one-time-transition.js` laddas inte av `index.html` och ingår inte i service worker-cachen. Den kräver en uttrycklig läsadapter och tillåter endast databaser med prefixet `lexl-prototype-`. Produktionsdatabasens namn avvisas. Alla körningar använder syntetiska data i nya headless Chromium-contexts på en tillfällig localhost-origin.
 
 Prototypen demonstrerar förberedelse, verifierad råbackup före samtycke, källbunden bekräftelse, transaktionssäker kopiering, separat aktivering, återupptagning, nya skrivningar och export/verifiering av filuppsättningen. Den kan inte i sig aktivera den riktiga appens lagring.
 
-Slutlig körning: **83 tester godkända, 0 misslyckade**. Det omfattar tidigare 66 tester samt 17 nya tester för:
+Den bevarade prototypen är fortfarande separat. Den integrerade lösningen använder `storage-transition.js`, `storage-session.js` och `backup-package.js`, vilka laddas av appen och ingår i offline-cachen. Appens start, ordinarie sparvägar och import går genom aktiveringskontrollen. Enbart förekomst av en `current`-post kan inte aktivera en kopia. Senaste skrivkvittots SHA-256 kontrolleras även efter senare sparningar vid återstart.
 
-- frånvaro i normal app och avvisning av produktionsdatabasnamn;
-- råbackup av både träningsdata och återställningspunkt före samtycke;
-- lyckad engångsövergång utan manuell filrundtur;
-- ändrad primärkälla respektive återställningskälla efter förberedelsen;
-- kvotfel vid säkerhetskopia, abort efter lyckad `put`, avbrott före aktivering och explicit återupptagning;
-- skadad säkerhetskopia, ogiltig källa och ändrad inaktiv kopia;
-- två samtidiga godkännanden mot samma mål samt skadat samtyckesunderlag vid omstart efter senare sparningar;
-- nya pass, ändrade/raderade äldre pass, kontrollsummor och saknade/förändrade filer;
-- faktisk filnedladdning, läsning från testdisk och återverifiering;
-- bevarande av både den ursprungliga och den senare ändrade legacy-källan.
+Slutlig körning: **103 tester godkända, 0 misslyckade**, inklusive 20 integrerade acceptanstester utöver tidigare 83 grund- och prototyptester. Fullständig matris och beteende vid första uppstart, nekande, avbrott, lagringsfel och återstart finns i `ETAPP1-STATUS.md`. Alla tester använder isolerade syntetiska data.
 
-## Arbete som återstår före verklig aktivering
+## Leverans och separat produktionsbeslut
 
-1. Beställaren granskar och godkänner den slutliga planen, inklusive vad återgång faktiskt kan visa.
-2. Integrera användarsamtycke och uppstartens källval inom etapp 1. **Alla läs- och skrivvägar måste gå genom aktiveringskontrollen.** Den befintliga appens `createStore` väljer annars en `current`-post direkt. Det är därför inte säkert att bara koppla in prototypen eller byta databasnamn; en inaktiv kopia får aldrig kringgå fasgränsen.
-3. Hantera gamla försöksdata, avböjande, ofullbordad reservation och återupptagning i den riktiga startkoden utan att skriva över någon källa. En redan aktiv ny installation ska inte uppgraderas igen.
-4. Implementera och testa slutlig exportpaketering och kontroll av sparade filer. Behåll skydd vid stora dataset/lagringskvot; ingen automatisk radering för att skapa plats.
-5. Testa den integrerade versionen, inklusive avbruten sida/omstart, flera riktiga appfönster, offline och fler målwebbläsare. Den nuvarande prototypen verifierar protokollet i Chromium, inte ett färdigt produktionsflöde eller alla hårdvarufel.
-6. Lämna etapp 1 för slutlig teknisk granskning. Ingen merge eller produktionspublicering utan separat godkännande; ingen etapp 2.
+Planens integration inom etapp 1 är genomförd. Ingen ytterligare planbekräftelse behövs för det redan godkända arbetet. Beställaren granskar nu slutrapport och kod. Målwebbläsare utöver den verifierade Chromium-miljön behöver kontrolleras inför produktion. Intern backup och externa ZIP-filer ska behållas enligt ovan; ingen datakälla raderas som del av aktivering eller återgång.
+
+Ingen merge, produktionspublicering, automatisk nedkonvertering, återimport till 0.11.14 eller etapp 2 har utförts eller är godkänd genom denna leverans.

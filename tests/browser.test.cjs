@@ -24,29 +24,30 @@ async function isolated(t,{raw=JSON.stringify(f()),init,serviceWorkers='block',a
  if(raw!==null)await page.evaluate(({key,raw})=>localStorage.setItem(key,raw),{key,raw});
  if(init)await context.addInitScript(init);
  await page.goto(url);await page.waitForFunction(()=>typeof lexlStore!=='undefined'&&lexlStore.initialized);
- if(activate&&raw!==null&&!await page.evaluate(()=>!!lexlStore.blocked))await page.evaluate(text=>importData(new File([text],'synthetic-activation.json')),raw);
+ if(activate&&raw!==null&&!await page.evaluate(()=>!!lexlStore.blocked))await activateTransition(page);
  return {page,context,errors};
 }
+async function activateTransition(page){await page.evaluate(async()=>{await lexlPrepareTransition();lexlMigrationConsent=true;document.getElementById('transition-consent').checked=true;await lexlApproveTransition()});assert.equal(await page.evaluate(()=>lexlStore.source),'indexeddb')}
 const state=page=>page.evaluate(()=>JSON.parse(JSON.stringify(state)));
 const raw=page=>page.evaluate(async key=>(await lexlStore.readPrimaryRaw())??localStorage.getItem(key),key);
 const invoke=(page,code)=>page.evaluate(code);
 
 test('valid startup leaves source untouched and normal views render',async t=>{const original=JSON.stringify(f()),{page,errors}=await isolated(t,{activate:false});assert.equal(await raw(page),original);for(const [v,id]of [['program','synthetic-p'],['edit','synthetic-p'],['history',null],['detail',0],['settings',null],['stats',null],['about',null],['home',null]]){await page.evaluate(([v,id])=>go(v,id),[v,id]);assert.ok(await page.locator('#app').textContent())}assert.deepEqual(errors,[]);assert.equal(await raw(page),original)});
 test('first startup has in-memory defaults but no persistent training data',async t=>{const {page,errors}=await isolated(t,{raw:null});assert.equal(await raw(page),null);assert.ok((await state(page)).programs.length>=3);assert.deepEqual(errors,[])});
-for(const damaged of ['{broken','{"programs":[],"history":{}}'])test('invalid startup preserves raw bytes and provides raw download',async t=>{const {page,errors}=await isolated(t,{raw:damaged});assert.equal(await page.locator('#data-error').isVisible(),true);assert.match(await page.locator('#data-error').textContent(),/blockerad/);await invoke(page,()=>newProgram());assert.equal(await raw(page),damaged);const download=page.waitForEvent('download');await page.getByRole('button',{name:'Exportera ursprungliga rådata',exact:true}).click();const d=await download;assert.equal(await fs.readFile(await d.path(),'utf8'),damaged);assert.deepEqual(errors,[])});
+for(const damaged of ['{broken','{"programs":[],"history":{}}'])test('invalid startup preserves raw bytes and provides raw download',async t=>{const {page,errors}=await isolated(t,{raw:damaged});assert.equal(await page.locator('#data-error').isVisible(),true);assert.match(await page.locator('#data-error').textContent(),/blockerad/);await invoke(page,()=>newProgram());assert.equal(await raw(page),damaged);const download=page.waitForEvent('download');await page.getByRole('button',{name:'Exportera localStorage-rådata',exact:true}).click();const d=await download;assert.equal(await fs.readFile(await d.path(),'utf8'),damaged);assert.deepEqual(errors,[])});
 test('workout lifecycle preserves values, IDs, comments and explicit training date',async t=>{const {page,errors}=await isolated(t);await invoke(page,()=>start('synthetic-p'));let a=await state(page);const sessionId=a.draft.sessionId;assert.ok(sessionId);await invoke(page,()=>setWorkoutDate('2026-10-20'));await invoke(page,()=>upd(0,'weight','12.5'));await invoke(page,()=>upd(0,'reps','9'));await invoke(page,()=>upd(0,'done',true));await invoke(page,()=>commentUpdate('synthetic-x','Synthetic session comment'));await invoke(page,()=>addWarm());await invoke(page,()=>warmUpdate(0,'minutes','3'));await invoke(page,()=>warmUpdate(0,'seconds','20'));await invoke(page,()=>addSet('synthetic-x'));await invoke(page,()=>removeSet('synthetic-x'));await invoke(page,()=>timerPause());await invoke(page,()=>timerPause());await invoke(page,()=>finish());a=await state(page);assert.equal(a.draft,null);const h=a.history.at(-1);assert.equal(h.sessionId,sessionId);assert.equal(h.programId,'synthetic-p');assert.equal(h.workoutDate,'2026-10-20');assert.equal(h.rows[0].weight,'12.5');assert.equal(h.rows[0].reps,'9');assert.equal(h.rows[0].done,true);assert.equal(h.comments['synthetic-x'],'Synthetic session comment');assert.equal(h.warmup[0].seconds,20);assert.equal(h.programSnapshot.name,'Synthetic program');assert.equal(h.circleGroups['synthetic-x'],'1');assert.equal(h.snapshot.record.sessionId,sessionId);assert.deepEqual(a.history[0].extra,f().history[0].extra);assert.deepEqual(errors,[])});
 test('retrospective entry is a single persisted start; date and time preserved',async t=>{const {page,errors}=await isolated(t);await invoke(page,()=>startRetrospective('synthetic-p'));assert.equal((await state(page)).storageRevision,2);await invoke(page,()=>setWorkoutDate('2026-09-10'));await invoke(page,()=>setWorkoutClock('06:45'));await invoke(page,()=>setTimeMinutes('35'));await invoke(page,()=>finish());const h=(await state(page)).history.at(-1);assert.equal(h.workoutDate,'2026-09-10');assert.equal(h.workoutClock,'06:45');assert.equal(h.totalMinutes,35);assert.equal(h.manualEntry,true);assert.deepEqual(errors,[])});
-test('legacy split combo rows survive app startup, editing, export and completion',async t=>{const fixture=f();fixture.programs=[{id:'b2',name:'Synthetic legacy combo',type:'vanligt',rounds:1,pages:[],exercises:[{id:'b2-1',name:'Side bend',sets:1,reps:'8',note:''},{id:'b2-2',name:'Press',sets:1,reps:'10',note:''}]}];fixture.draft={id:'b2',name:'Synthetic legacy combo',started:'2026-11-01T12:00:00Z',rows:[{id:'b2-1',name:'Side bend',set:1,weight:'8',reps:'9',done:true},{id:'b2-2',name:'Press',set:1,weight:'10',reps:'11',done:true}],comments:{'b2-1':'side','b2-2':'press'},warmup:[],circleGroups:{'b2-1':'A','b2-2':'A'}};const initial=JSON.stringify(fixture),{page,errors}=await isolated(t,{raw:initial,activate:false});assert.equal(await raw(page),initial);await page.evaluate(text=>importData(new File([text],'synthetic-activation.json')),initial);await page.evaluate(()=>go('workout'));assert.equal(await page.locator('.lexl-workout-exercise').count(),2);const migrated=await page.evaluate(()=>{migrateCombo(state);return LEXLData.exportData(state)});assert.equal(JSON.parse(migrated).draft.rows.length,2);await invoke(page,()=>commentUpdate('b2-2','updated press note'));await invoke(page,()=>finish());const h=(await state(page)).history.at(-1);for(let i=0;i<2;i++)for(const [k,v]of Object.entries(fixture.draft.rows[i]))assert.deepEqual(h.rows[i][k],v);assert.equal(h.comments['b2-1'],'side');assert.equal(h.comments['b2-2'],'updated press note');assert.deepEqual(h.circleGroups,fixture.draft.circleGroups);assert.deepEqual(errors,[])});
+test('legacy split combo rows survive app startup, editing, export and completion',async t=>{const fixture=f();fixture.programs=[{id:'b2',name:'Synthetic legacy combo',type:'vanligt',rounds:1,pages:[],exercises:[{id:'b2-1',name:'Side bend',sets:1,reps:'8',note:''},{id:'b2-2',name:'Press',sets:1,reps:'10',note:''}]}];fixture.draft={id:'b2',name:'Synthetic legacy combo',started:'2026-11-01T12:00:00Z',rows:[{id:'b2-1',name:'Side bend',set:1,weight:'8',reps:'9',done:true},{id:'b2-2',name:'Press',set:1,weight:'10',reps:'11',done:true}],comments:{'b2-1':'side','b2-2':'press'},warmup:[],circleGroups:{'b2-1':'A','b2-2':'A'}};const initial=JSON.stringify(fixture),{page,errors}=await isolated(t,{raw:initial,activate:false});assert.equal(await raw(page),initial);await activateTransition(page);await page.evaluate(()=>go('workout'));assert.equal(await page.locator('.lexl-workout-exercise').count(),2);const migrated=await page.evaluate(()=>{migrateCombo(state);return LEXLData.exportData(state)});assert.equal(JSON.parse(migrated).draft.rows.length,2);await invoke(page,()=>commentUpdate('b2-2','updated press note'));await invoke(page,()=>finish());const h=(await state(page)).history.at(-1);for(let i=0;i<2;i++)for(const [k,v]of Object.entries(fixture.draft.rows[i]))assert.deepEqual(h.rows[i][k],v);assert.equal(h.comments['b2-1'],'side');assert.equal(h.comments['b2-2'],'updated press note');assert.deepEqual(h.circleGroups,fixture.draft.circleGroups);assert.deepEqual(errors,[])});
 test('program editor, copies, new exercise and deletion leave history intact',async t=>{const {page,errors}=await isolated(t);const originalHistory=(await state(page)).history;await invoke(page,()=>duplicate('synthetic-p'));let a=await state(page),copy=a.programs.at(-1);assert.notEqual(copy.id,'synthetic-p');assert.equal(copy.exercises[0].exerciseId,a.programs[0].exercises[0].exerciseId);assert.notEqual(copy.exercises[0].slotId,a.programs[0].exercises[0].slotId);await page.evaluate(id=>{setProg(id,'name','Synthetic edited copy');addEx(id)},copy.id);await page.evaluate(id=>saveExerciseOrder(id),copy.id);a=await state(page);copy=a.programs.at(-1);assert.equal(copy.name,'Synthetic edited copy');assert.equal(copy.exercises.length,3);assert.ok(copy.exercises[2].exerciseId);assert.deepEqual(a.history,originalHistory);await page.evaluate(id=>deleteProg(id),copy.id);assert.equal((await state(page)).programs.length,1);assert.deepEqual((await state(page)).history,originalHistory);assert.deepEqual(errors,[])});
 test('legacy import replaces state only after durable save and can be restored',async t=>{const {page,errors}=await isolated(t),before=await raw(page),incoming=f();incoming.history[0].name='Synthetic imported';await page.evaluate(text=>importData(new File([text],'synthetic.json',{type:'application/json'})),JSON.stringify(incoming));assert.equal((await state(page)).history[0].name,'Synthetic imported');assert.equal(await page.evaluate(()=>lexlStore.recoveryRaw()),before);await page.evaluate(async()=>{const raw=await lexlStore.recoveryRaw();return importData(new File([raw],'synthetic-restore.json'))});assert.equal((await state(page)).history[0].name,'Synthetic old session');assert.deepEqual(errors,[])});
 test('malformed or incomplete import never changes storage or active state',async t=>{const {page}=await isolated(t),before=await raw(page),active=await state(page);for(const text of ['{bad','{}','{"programs":[]}','{"programs":[],"history":[],"schemaVersion":42}']){await page.evaluate(text=>importData(new File([text],'bad.json')),text);assert.equal(await raw(page),before);assert.deepEqual(await state(page),active)}});
 test('quota failure during import leaves active state, original and recovery intact',async t=>{const {page}=await isolated(t),before=await raw(page),active=await state(page),priorRecovery=await page.evaluate(()=>lexlStore.recoveryRaw());await page.evaluate(key=>{const put=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(v,k){if(k==='current')throw new DOMException('Synthetic quota','QuotaExceededError');return put.call(this,v,k)}},stateKey);const incoming=f();incoming.history=[];await page.evaluate(text=>importData(new File([text],'synthetic.json')),JSON.stringify(incoming));assert.equal(await raw(page),before);assert.deepEqual(await state(page),active);assert.equal(await page.evaluate(()=>lexlStore.recoveryRaw()),priorRecovery);assert.equal(await page.locator('#status').textContent(),'Inte sparat');assert.equal(await page.locator('#data-error').isVisible(),true)});
 test('failed workout save preserves old state; retry commits retained candidate',async t=>{const {page}=await isolated(t);await invoke(page,()=>start('synthetic-p'));const before=await raw(page),active=await state(page);await page.evaluate(key=>{window.syntheticPut=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(v,k){if(k==='current')throw new DOMException('Synthetic quota','QuotaExceededError');return window.syntheticPut.call(this,v,k)}},stateKey);await invoke(page,()=>upd(0,'weight','99'));assert.equal(await raw(page),before);assert.deepEqual(await state(page),active);await invoke(page,()=>upd(0,'reps','100'));assert.equal(await page.evaluate(()=>lexlUnsaved.draft.rows[0].weight),'99');assert.equal(await page.evaluate(()=>lexlUnsaved.draft.rows[0].reps),'8');await page.evaluate(()=>{IDBObjectStore.prototype.put=window.syntheticPut});await page.getByRole('button',{name:'Försök spara osparat arbete igen'}).click();await page.waitForFunction(()=>state.draft.rows[0].weight==='99');assert.equal(await page.locator('#data-error').isVisible(),false)});
-test('two real app tabs serialize writes; stale tab cannot overwrite',async t=>{const {page,context,errors}=await isolated(t);const b=await context.newPage();await b.goto(url);await b.waitForFunction(()=>typeof lexlStore!=='undefined'&&lexlStore.initialized);await Promise.all([page.evaluate(()=>newProgram()),b.evaluate(()=>newProgram())]);const persisted=JSON.parse(await raw(page));assert.equal(persisted.programs.length,2);const states=await Promise.all([state(page),state(b)]);assert.equal(states.filter(s=>s.programs.length===2).length,1);assert.equal(states.filter(s=>s.programs.length===1).length,1);const stale=states[0].programs.length===1?page:b;await stale.waitForFunction(()=>!document.getElementById('data-error').hidden);assert.match(await stale.locator('#data-error').textContent(),/annat appfönster|osparad/);assert.deepEqual(errors,[])});
+test('two real app tabs serialize writes; stale tab cannot overwrite',async t=>{const {page,context,errors}=await isolated(t);const b=await context.newPage();await b.goto(url);await b.waitForFunction(()=>typeof lexlStore!=='undefined'&&lexlStore.initialized);await Promise.all([page.evaluate(()=>newProgram()),b.evaluate(()=>newProgram())]);const persisted=JSON.parse(await raw(page));assert.equal(persisted.programs.length,2);const states=await Promise.all([state(page),state(b)]);assert.equal(states.filter(s=>s.programs.length===2).length,1);assert.equal(states.filter(s=>s.programs.length===1).length,1);const stale=states[0].programs.length===1?page:b;await stale.waitForFunction(()=>!document.getElementById('data-error').hidden);assert.match(await stale.locator('#data-error').textContent(),/annat appfönster|osparad|äldre tillstånd/);assert.deepEqual(errors,[])});
 test('IndexedDB does not require Web Locks',async t=>{const {page,errors}=await isolated(t,{init:()=>Object.defineProperty(navigator,'locks',{value:undefined})});await invoke(page,()=>newProgram());assert.equal((await state(page)).programs.length,2);assert.deepEqual(errors,[])});
 test('history display and order use training date independently of original timestamps',async t=>{const fixture=f();fixture.history[0].workoutDate='2026-11-10';fixture.history.push({...D.copy(fixture.history[0]),name:'Synthetic earlier training',date:'2026-11-12T12:00:00Z',workoutDate:'2026-11-09'});const {page}=await isolated(t,{raw:JSON.stringify(fixture)});await invoke(page,()=>go('history'));const titles=await page.locator('.lexl-history-card-body h3').allTextContents();assert.deepEqual(titles,['Synthetic old session','Synthetic earlier training']);assert.match(await page.locator('.lexl-history-card').first().textContent(),/10 november/);assert.equal((await state(page)).history[0].date,'2026-10-31T23:30:00Z')});
 test('export download is versioned and round-trips without historical changes',async t=>{const {page}=await isolated(t),active=await state(page),download=page.waitForEvent('download');await invoke(page,()=>exportData());const d=await download,text=await fs.readFile(await d.path(),'utf8');const parsed=D.importData(text);assert.equal(parsed.schemaVersion,1);assert.deepEqual(parsed,active)});
-test('legacy draft recovery key is retained even after completed pass',async t=>{const fixture=f();const draft={id:'synthetic-p',name:'Synthetic recovered',started:'2026-11-01T12:00:00Z',rows:[{id:'synthetic-x',name:'Synthetic exercise',set:1,weight:'17',reps:'4',done:true}],warmup:[],comments:{},circleGroups:{}};const {page,errors}=await isolated(t);await page.evaluate(({key,draft})=>localStorage.setItem(key+'-draft-recovery-v27',JSON.stringify({draft,savedAt:'2026-11-01T13:00:00Z'})),{key,draft});await page.reload();const originalRecovery=await page.evaluate(key=>localStorage.getItem(key+'-draft-recovery-v27'),key);await invoke(page,()=>recoverDraft());assert.equal((await state(page)).draft.rows[0].weight,'17');await invoke(page,()=>finish());assert.ok(await page.evaluate(key=>localStorage.getItem(key+'-draft-recovery-v27'),key));assert.equal(await page.evaluate(key=>localStorage.getItem(key+'-draft-recovery-v27'),key),originalRecovery);await page.reload();await page.waitForFunction(()=>typeof lexlStore!=='undefined'&&lexlStore.initialized);assert.equal(await page.evaluate(()=>recoveredDraft),null);assert.deepEqual(errors,[])});
+test('legacy draft recovery key is retained even after completed pass',async t=>{const fixture=f();const draft={id:'synthetic-p',name:'Synthetic recovered',started:'2026-11-01T12:00:00Z',rows:[{id:'synthetic-x',name:'Synthetic exercise',set:1,weight:'17',reps:'4',done:true}],warmup:[],comments:{},circleGroups:{}};const {page,errors}=await isolated(t,{activate:false});await page.evaluate(({key,draft})=>localStorage.setItem(key+'-draft-recovery-v27',JSON.stringify({draft,savedAt:'2026-11-01T13:00:00Z'})),{key,draft});await page.reload();await page.waitForFunction(()=>typeof lexlStore!=='undefined'&&lexlStore.initialized);await activateTransition(page);const originalRecovery=await page.evaluate(key=>localStorage.getItem(key+'-draft-recovery-v27'),key);await invoke(page,()=>recoverDraft());assert.equal((await state(page)).draft.rows[0].weight,'17');await invoke(page,()=>finish());assert.ok(await page.evaluate(key=>localStorage.getItem(key+'-draft-recovery-v27'),key));assert.equal(await page.evaluate(key=>localStorage.getItem(key+'-draft-recovery-v27'),key),originalRecovery);await page.reload();await page.waitForFunction(()=>typeof lexlStore!=='undefined'&&lexlStore.initialized);assert.equal(await page.evaluate(()=>recoveredDraft),null);assert.deepEqual(errors,[])});
 test('service worker includes data layer and supports isolated offline reload',{timeout:20000},async t=>{const {page,context,errors}=await isolated(t,{serviceWorkers:'allow'});await page.evaluate(async()=>{await Promise.race([navigator.serviceWorker.ready,new Promise((_,reject)=>setTimeout(()=>reject(Error('Service worker ready timeout')),7000))]);if(!navigator.serviceWorker.controller)await Promise.race([new Promise(r=>navigator.serviceWorker.addEventListener('controllerchange',r,{once:true})),new Promise((_,reject)=>setTimeout(()=>reject(Error('Service worker controller timeout')),7000))])});assert.equal(await page.evaluate(async()=>{const names=await caches.keys();const cache=await caches.open(names.find(x=>x.includes('01115-stage1')));return !!await cache.match('./data-layer.js')}),true);await context.setOffline(true);await page.reload();await page.waitForFunction(()=>typeof lexlStore!=='undefined'&&lexlStore.initialized);assert.equal((await state(page)).history[0].rows[0].weight,'7.5');await invoke(page,()=>start('synthetic-p'));assert.ok((await state(page)).draft.sessionId);assert.deepEqual(errors,[])});
 
 // These tests exercise real IndexedDB transactions rather than mocked transaction semantics.
@@ -85,7 +86,7 @@ test('empty installation activates IndexedDB only after first verified commit',a
  assert.deepEqual(result,{initial:{source:'first-start',primary:null,raw:null},source:'indexeddb',revision:1,equal:true,original:null,previous:null,onlyReadLegacy:true});
 });
 
-test('manual import is the only activation path for existing legacy data; reload selects primary',async t=>{
+test('low-level copy adapter requires explicit import intent; application activation is separately gated',async t=>{
  const result=await nativeCase(t,async fixture=>{
   const original=JSON.stringify(fixture),dbName='synthetic-manual',options={dbName,legacyKey:'legacy',storage:{getItem:()=>original},defaults:()=>fixture};
   const a=LEXLData.createStore(options);await a.ready;
@@ -240,15 +241,16 @@ test('legacy time near midnight retains its former local date display without in
  assert.match(await page.locator('.lexl-history-card').first().textContent(),/1 november/);
  assert.equal((await state(page)).history[0].date,'2026-10-31T23:30:00Z');
 });
-test('denied legacy write can be followed by an explicit import without losing original',async t=>{
+test('ordinary writes and imports cannot bypass the explicit transition',async t=>{
  const {page}=await isolated(t,{activate:false});
- await page.evaluate(()=>newProgram());assert.ok(await page.evaluate(()=>!!lexlUnsaved));
- await page.evaluate(text=>importData(new File([text],'synthetic-explicit-import.json')),JSON.stringify(f()));
- assert.equal(await page.evaluate(()=>lexlStore.source),'indexeddb');
+ await page.evaluate(()=>newProgram());
+ assert.equal(await page.evaluate(()=>lexlStore.readPrimaryRaw()),null);
+ await page.evaluate(text=>importData(new File([text],'synthetic-import.json')),JSON.stringify(f()));
+ assert.equal(await page.evaluate(()=>lexlStore.readPrimaryRaw()),null);
+ await activateTransition(page);
  assert.equal((await state(page)).programs.length,1);
  assert.equal(await page.evaluate(key=>localStorage.getItem(key),key),JSON.stringify(f()));
 });
-
 test('real form events persist asynchronously and leave every legacy training key byte-for-byte unchanged',async t=>{
  const {page,errors}=await isolated(t);
  const legacy=await page.evaluate(key=>({primary:localStorage.getItem(key),draft:localStorage.getItem(key+'-draft-recovery-v27'),experimental:localStorage.getItem(key+'-schema1')}),key);
@@ -470,4 +472,203 @@ test('transition startup rejects damaged consent proof after later saves without
   return {error,unchanged:before===after,legacyUnchanged:raw===JSON.stringify(fixture)};
  });
  assert.match(result.error,/underlaget kunde inte verifieras/);assert.equal(result.unchanged,true);assert.equal(result.legacyUnchanged,true);
+});
+
+// End-to-end acceptance of the actual app, not the separate investigation prototype.
+async function prepareThroughUI(page){await page.locator('#transition-prepare').click();await page.waitForFunction(()=>!!lexlMigrationSummary&&!lexlMigrationBusy)}
+async function approveThroughUI(page){await page.getByRole('checkbox',{name:/Jag godkänner/}).check();await page.getByRole('button',{name:'Fortsätt med säker övergång',exact:true}).click();await page.waitForFunction(()=>lexlStore.source==='indexeddb'&&!lexlMigrationBusy)}
+
+test('integrated first start persists first action with verified activation and survives restart',async t=>{
+ const {page,errors}=await isolated(t,{raw:null});assert.equal(await page.locator('#transition-panel').isVisible(),false);
+ assert.equal(await page.evaluate(()=>lexlStore.readPrimaryRaw()),null);
+ await page.evaluate(()=>newProgram());assert.equal((await state(page)).storageRevision,1);
+ const count=(await state(page)).programs.length;
+ await page.reload();await page.waitForFunction(()=>typeof lexlStore!=='undefined'&&lexlStore.initialized);
+ assert.equal(await page.evaluate(()=>lexlStore.source),'indexeddb');assert.equal((await state(page)).programs.length,count);
+ assert.equal(await page.evaluate(key=>localStorage.getItem(key),key),null);assert.deepEqual(errors,[]);
+});
+
+test('integrated consent is explicit, readable on mobile and needs no file export/import',async t=>{
+ const {page,errors}=await isolated(t,{activate:false});await page.setViewportSize({width:390,height:844});
+ assert.equal(await page.getByRole('checkbox',{name:/Jag godkänner/}).count(),0);
+ await prepareThroughUI(page);
+ assert.equal(await page.evaluate(()=>lexlStore.readPrimaryRaw()),null);
+ assert.equal(await page.getByRole('button',{name:'Fortsätt med säker övergång',exact:true}).isEnabled(),false);
+ assert.match(await page.locator('#transition-panel').textContent(),/SHA-256/);
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
+ await page.locator('#transition-panel').screenshot({path:'/workspace/work/transition-consent-mobile.png'});
+ await approveThroughUI(page);assert.equal(await page.locator('#transition-panel').isVisible(),false);
+ assert.equal(await page.evaluate(key=>localStorage.getItem(key),key),JSON.stringify(f()));assert.deepEqual(errors,[]);
+});
+
+test('integrated declined transition remains read-only after restart and can be approved later',async t=>{
+ const {page}=await isolated(t,{activate:false});await prepareThroughUI(page);await page.locator('#transition-decline').click();
+ await page.evaluate(()=>go('program','synthetic-p'));
+ assert.equal(await page.getByRole('button',{name:/Starta pass/}).isEnabled(),false);
+ assert.equal(await page.evaluate(()=>lexlStore.readPrimaryRaw()),null);
+ await page.reload();await page.waitForFunction(()=>typeof lexlStore!=='undefined'&&lexlStore.initialized);
+ assert.match(await page.locator('#transition-panel').textContent(),/valt att vänta/);
+ assert.equal(await page.evaluate(()=>lexlStore.readPrimaryRaw()),null);
+ await prepareThroughUI(page);await approveThroughUI(page);assert.equal((await state(page)).history.length,1);
+});
+
+test('integrated backup failure exposes no consent and leaves localStorage and primary untouched',async t=>{
+ const {page}=await isolated(t,{activate:false});
+ await page.evaluate(()=>{window.syntheticAdd=IDBObjectStore.prototype.add;IDBObjectStore.prototype.add=function(v,k){if(String(k).startsWith('backup:'))throw new DOMException('Synthetic backup quota','QuotaExceededError');return window.syntheticAdd.call(this,v,k)}});
+ await page.locator('#transition-prepare').click();await page.waitForFunction(()=>!lexlMigrationBusy);
+ assert.equal(await page.getByRole('checkbox',{name:/Jag godkänner/}).count(),0);
+ assert.equal(await page.evaluate(()=>lexlStore.readPrimaryRaw()),null);
+ assert.match(await page.locator('#data-error').textContent(),/quota/);
+ assert.equal(await page.evaluate(key=>localStorage.getItem(key),key),JSON.stringify(f()));
+ await page.evaluate(()=>{IDBObjectStore.prototype.add=window.syntheticAdd});await prepareThroughUI(page);await approveThroughUI(page);
+});
+
+test('integrated interrupted copy remains inactive on restart and resumes without duplicate history',async t=>{
+ const {page}=await isolated(t,{activate:false});await prepareThroughUI(page);
+ await page.evaluate(()=>{window.syntheticAdd=IDBObjectStore.prototype.add;IDBObjectStore.prototype.add=function(v,k){if(k==='activation')throw new DOMException('Synthetic activation quota','QuotaExceededError');return window.syntheticAdd.call(this,v,k)}});
+ await page.getByRole('checkbox',{name:/Jag godkänner/}).check();await page.getByRole('button',{name:'Fortsätt med säker övergång',exact:true}).click();await page.waitForFunction(()=>!lexlMigrationBusy);
+ assert.equal(await page.evaluate(()=>lexlStore.source),'legacy-readonly');assert.notEqual(await page.evaluate(()=>lexlStore.readPrimaryRaw()),null);
+ await page.reload();await page.waitForFunction(()=>typeof lexlStore!=='undefined'&&lexlStore.initialized);
+ assert.equal(await page.evaluate(()=>lexlStore.source),'legacy-readonly');assert.equal((await state(page)).storageRevision,0);
+ await approveThroughUI(page);assert.equal((await state(page)).storageRevision,1);assert.equal((await state(page)).history.length,1);
+ assert.equal(await page.evaluate(key=>localStorage.getItem(key),key),JSON.stringify(f()));
+});
+
+test('integrated copy transaction abort rolls back primary and allows verified restart retry',async t=>{
+ const {page}=await isolated(t,{activate:false});await prepareThroughUI(page);
+ await page.evaluate(()=>{window.syntheticPut=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(v,k){const r=window.syntheticPut.call(this,v,k);if(k==='current')r.addEventListener('success',()=>this.transaction.abort(),{once:true});return r}});
+ await page.getByRole('checkbox',{name:/Jag godkänner/}).check();await page.getByRole('button',{name:'Fortsätt med säker övergång',exact:true}).click();await page.waitForFunction(()=>!lexlMigrationBusy);
+ assert.equal(await page.evaluate(()=>lexlStore.readPrimaryRaw()),null);assert.equal(await page.evaluate(()=>lexlStore.source),'legacy-readonly');
+ await page.reload();await page.waitForFunction(()=>typeof lexlStore!=='undefined'&&lexlStore.initialized);await approveThroughUI(page);assert.equal((await state(page)).storageRevision,1);
+});
+
+test('integrated damaged backup blocks consent confirmation without replacing source data',async t=>{
+ const {page}=await isolated(t,{activate:false});await prepareThroughUI(page);
+ await page.evaluate(async()=>{const id=lexlMigrationSummary.id;await new Promise((resolve,reject)=>{const r=indexedDB.open('lexl-training-schema1',1);r.onsuccess=()=>{const db=r.result,tx=db.transaction('records','readwrite');tx.objectStore('records').put({format:'lexl-transition-backup-v1',payload:'damaged',sha256:lexlMigrationSummary.backupSha256},'backup:'+id);tx.oncomplete=()=>{db.close();resolve()};tx.onabort=()=>reject(tx.error)};r.onerror=()=>reject(r.error)})});
+ await page.getByRole('checkbox',{name:/Jag godkänner/}).check();await page.getByRole('button',{name:'Fortsätt med säker övergång',exact:true}).click();await page.waitForFunction(()=>!lexlMigrationBusy);
+ assert.equal(await page.evaluate(()=>lexlStore.readPrimaryRaw()),null);assert.equal(await page.evaluate(()=>lexlStore.source),'legacy-readonly');
+ assert.match(await page.locator('#data-error').textContent(),/Säkerhetskopian/);assert.equal(await page.evaluate(key=>localStorage.getItem(key),key),JSON.stringify(f()));
+});
+
+test('integrated missing activation marker cannot be bypassed by ordinary import or writes',async t=>{
+ const {page}=await isolated(t);const before=await page.evaluate(()=>lexlStore.readPrimaryRaw());
+ await page.evaluate(async()=>{await new Promise((resolve,reject)=>{const r=indexedDB.open('lexl-training-schema1',1);r.onsuccess=()=>{const db=r.result,tx=db.transaction('records','readwrite');tx.objectStore('records').delete('activation');tx.oncomplete=()=>{db.close();resolve()};tx.onabort=()=>reject(tx.error)};r.onerror=()=>reject(r.error)})});
+ await page.reload();await page.waitForFunction(()=>typeof lexlStore!=='undefined'&&lexlStore.initialized);assert.equal(await page.evaluate(()=>lexlStore.source),'legacy-readonly');
+ await page.evaluate(()=>newProgram());await page.evaluate(text=>importData(new File([text],'synthetic.json')),JSON.stringify(f()));
+ assert.equal(await page.evaluate(()=>lexlStore.readPrimaryRaw()),before);assert.equal((await state(page)).storageRevision,0);
+});
+
+test('integrated ZIP export is standard-compatible and verifies the actual downloaded file without importing',async t=>{
+ const {execFileSync}=require('node:child_process');
+ const {page,errors}=await isolated(t);await page.evaluate(()=>start('synthetic-p'));await page.evaluate(()=>upd(0,'weight','21.5'));await page.evaluate(()=>commentUpdate('synthetic-x','Syntetisk åäö 🏋️'));await page.evaluate(()=>finish());await page.evaluate(()=>go('settings'));
+ const before=await page.evaluate(()=>lexlStore.readPrimaryRaw()),legacy=await page.evaluate(key=>localStorage.getItem(key),key),download=page.waitForEvent('download');
+ await page.getByRole('button',{name:'Exportera återgångspaket (ZIP)',exact:true}).click();
+ const file=await download,path=await file.path(),bytes=await fs.readFile(path);
+ assert.match(file.suggestedFilename(),/\.zip$/);
+ execFileSync('python3',['-c',`import sys, zipfile, json, hashlib
+with zipfile.ZipFile(sys.argv[1]) as z:
+ assert z.testzip() is None
+ m=json.loads(z.read('manifest.json'))
+ for f in m['files']:
+  data=z.read(f['name'])
+  assert hashlib.sha256(data).hexdigest()==f['sha256']
+  assert len(data)==f['utf8Bytes']
+ assert 'Syntetisk' in z.read('indexeddb-01115.json').decode('utf-8')
+`,path]);
+ await page.locator('#rollback-package-file').setInputFiles({name:'synthetic-downloaded.zip',mimeType:'application/zip',buffer:bytes});
+ await page.waitForFunction(()=>lexlRollbackMessage.startsWith('Verifierat nedladdat paket'));
+ assert.match(await page.locator('#rollback-verification').textContent(),/1 nytt pass/);
+ assert.equal(await page.evaluate(()=>lexlStore.readPrimaryRaw()),before);assert.equal(await page.evaluate(key=>localStorage.getItem(key),key),legacy);
+ const bad=Buffer.from(bytes);bad[60]^=1;
+ await page.locator('#rollback-package-file').setInputFiles({name:'synthetic-damaged.zip',mimeType:'application/zip',buffer:bad});await page.waitForFunction(()=>lexlRollbackMessage.startsWith('Paketet kunde inte verifieras'));
+ assert.equal(await page.evaluate(()=>lexlStore.readPrimaryRaw()),before);assert.deepEqual(errors,[]);
+});
+
+test('integrated first-start rollback package represents missing original explicitly',async t=>{
+ const {page}=await isolated(t,{raw:null});await page.evaluate(()=>newProgram());
+ const result=await page.evaluate(async()=>{const bundle=await lexlStore.exportBeforeRollback();const archive=LEXLBackupPackage.encode(bundle),roundtrip=LEXLBackupPackage.decode(archive);return {manifest:JSON.parse(roundtrip.manifestText),verified:await lexlStore.verifyBundle(roundtrip),original:roundtrip.files['localstorage-original-01114.json']}});
+ assert.equal(result.manifest.originalMissing,true);assert.equal(result.original,'null');assert.equal(result.verified.verified,true);
+});
+
+test('integrated two-window transition and subsequent edits permit one writer per revision',async t=>{
+ const {page,context}=await isolated(t,{activate:false}),other=await context.newPage();await other.goto(url);await other.waitForFunction(()=>typeof lexlStore!=='undefined'&&lexlStore.initialized);
+ await Promise.all([prepareThroughUI(page),prepareThroughUI(other)]);
+ await Promise.all([page.getByRole('checkbox',{name:/Jag godkänner/}).check(),other.getByRole('checkbox',{name:/Jag godkänner/}).check()]);
+ await Promise.all([page.getByRole('button',{name:'Fortsätt med säker övergång',exact:true}).click(),other.getByRole('button',{name:'Fortsätt med säker övergång',exact:true}).click()]);
+ await page.waitForFunction(()=>!lexlMigrationBusy);await other.waitForFunction(()=>!lexlMigrationBusy);
+ const sources=await Promise.all([page.evaluate(()=>lexlStore.source),other.evaluate(()=>lexlStore.source)]);assert.ok(sources.filter(s=>s==='indexeddb').length>=1);assert.equal(JSON.parse(await page.evaluate(()=>lexlStore.readPrimaryRaw())).storageRevision,1);assert.equal(JSON.parse(await page.evaluate(()=>lexlStore.readPrimaryRaw())).history.length,1);
+ await Promise.all([page.reload(),other.reload()]);await page.waitForFunction(()=>lexlStore.initialized);await other.waitForFunction(()=>lexlStore.initialized);
+ await Promise.all([page.evaluate(()=>newProgram()),other.evaluate(()=>newProgram())]);const counts=await Promise.all([state(page),state(other)]);assert.equal(counts.filter(s=>s.programs.length===2).length,1);assert.equal(counts.filter(s=>s.programs.length===1).length,1);
+});
+
+test('integrated failed first save offers resume and retains the exact proposed first action',async t=>{
+ const {page}=await isolated(t,{raw:null});const originalCount=(await state(page)).programs.length;
+ await page.evaluate(()=>{window.syntheticAdd=IDBObjectStore.prototype.add;IDBObjectStore.prototype.add=function(v,k){if(k==='activation')throw new DOMException('Synthetic first activation quota','QuotaExceededError');return window.syntheticAdd.call(this,v,k)}});
+ await page.evaluate(()=>newProgram());assert.equal((await state(page)).programs.length,originalCount);assert.equal(await page.locator('#transition-panel').isVisible(),true);assert.ok(await page.evaluate(()=>!!lexlUnsaved));
+ await page.evaluate(()=>{IDBObjectStore.prototype.add=window.syntheticAdd});
+ await approveThroughUI(page);
+ assert.equal((await state(page)).programs.length,originalCount+1);assert.equal((await state(page)).storageRevision,1);assert.equal(await page.evaluate(()=>lexlUnsaved),null);
+ await page.reload();await page.waitForFunction(()=>typeof lexlStore!=='undefined'&&lexlStore.initialized);assert.equal((await state(page)).programs.length,originalCount+1);
+});
+
+test('integrated recovery-only installation requires consent and preserves the original draft checkpoint',async t=>{
+ const draft={id:'synthetic-old',name:'Synthetic orphan recovery',started:'2026-11-01T12:00:00Z',rows:[{id:'old-x',name:'Old exercise',set:1,weight:'31',reps:'7',done:true}],comments:{'old-x':'Old checkpoint note'},circleGroups:{'old-x':'A'}};
+ const {page}=await isolated(t,{raw:null,init:()=>localStorage.setItem('min-traning-v1-draft-recovery-v27',JSON.stringify({draft:{id:'synthetic-old',name:'Synthetic orphan recovery',started:'2026-11-01T12:00:00Z',rows:[{id:'old-x',name:'Old exercise',set:1,weight:'31',reps:'7',done:true}],comments:{'old-x':'Old checkpoint note'},circleGroups:{'old-x':'A'}},savedAt:'2026-11-01T13:00:00Z'}))});
+ const original=await page.evaluate(()=>localStorage.getItem('min-traning-v1-draft-recovery-v27'));
+ assert.equal(await page.evaluate(()=>lexlStore.source),'legacy-readonly');assert.equal(await page.evaluate(()=>lexlStore.readPrimaryRaw()),null);
+ await prepareThroughUI(page);await approveThroughUI(page);await page.evaluate(()=>recoverDraft());
+ const active=(await state(page)).draft;assert.equal(active.rows[0].weight,draft.rows[0].weight);assert.equal(active.rows[0].reps,draft.rows[0].reps);assert.deepEqual(active.comments,draft.comments);assert.deepEqual(active.circleGroups,draft.circleGroups);
+ assert.equal(await page.evaluate(()=>localStorage.getItem('min-traning-v1-draft-recovery-v27')),original);assert.equal(await page.evaluate(key=>localStorage.getItem(key),key),null);
+});
+
+test('integrated rollback package includes unsaved work without changing committed state',async t=>{
+ const {page}=await isolated(t);await page.evaluate(()=>start('synthetic-p'));const committed=await page.evaluate(()=>lexlStore.readPrimaryRaw());
+ await page.evaluate(()=>{window.syntheticPut=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(v,k){if(k==='current')throw new DOMException('Synthetic quota','QuotaExceededError');return window.syntheticPut.call(this,v,k)}});
+ await page.evaluate(()=>upd(0,'weight','99'));assert.ok(await page.evaluate(()=>!!lexlUnsaved));await page.evaluate(()=>{IDBObjectStore.prototype.put=window.syntheticPut});
+ const result=await page.evaluate(async()=>{const b=await lexlStore.exportBeforeRollback({unsavedRaw:JSON.stringify(lexlUnsaved)}),z=LEXLBackupPackage.encode(b),decoded=LEXLBackupPackage.decode(z);return {verified:await lexlStore.verifyBundle(decoded),manifest:JSON.parse(decoded.manifestText),unsaved:JSON.parse(decoded.files['unsaved-work.json']),saved:JSON.parse(decoded.files['indexeddb-01115.json'])}});
+ assert.equal(result.verified.verified,true);assert.equal(result.manifest.containsUnsavedWork,true);assert.equal(result.unsaved.draft.rows[0].weight,'99');assert.notEqual(result.saved.draft.rows[0].weight,'99');assert.equal(await page.evaluate(()=>lexlStore.readPrimaryRaw()),committed);
+});
+
+test('integrated real page reload before activation retains an inactive copy until consent is renewed',async t=>{
+ const {page}=await isolated(t,{activate:false});await prepareThroughUI(page);
+ await page.evaluate(()=>{const add=IDBObjectStore.prototype.add;IDBObjectStore.prototype.add=function(v,k){if(k==='activation'){location.reload();throw Error('Synthetic page interruption')}return add.call(this,v,k)}});
+ await page.getByRole('checkbox',{name:/Jag godkänner/}).check();const navigation=page.waitForNavigation({waitUntil:'load'});await page.getByRole('button',{name:'Fortsätt med säker övergång',exact:true}).click();await navigation;await page.waitForFunction(()=>typeof lexlStore!=='undefined'&&lexlStore.initialized);
+ assert.equal(await page.evaluate(()=>lexlStore.source),'legacy-readonly');assert.equal((await state(page)).storageRevision,0);assert.equal(await page.getByRole('checkbox',{name:/Jag godkänner/}).isChecked(),false);
+ await approveThroughUI(page);assert.equal((await state(page)).storageRevision,1);assert.equal((await state(page)).history.length,1);
+});
+
+test('integrated verification warns when a valid downloaded package is older than current saved data',async t=>{
+ const {page}=await isolated(t);await page.evaluate(()=>go('settings'));const download=page.waitForEvent('download');await page.getByRole('button',{name:'Exportera återgångspaket (ZIP)',exact:true}).click();const file=await download,bytes=await fs.readFile(await file.path());
+ await page.evaluate(()=>newProgram());await page.evaluate(()=>go('settings'));const before=await page.evaluate(()=>lexlStore.readPrimaryRaw());
+ await page.locator('#rollback-package-file').setInputFiles({name:'synthetic-earlier.zip',mimeType:'application/zip',buffer:bytes});await page.waitForFunction(()=>lexlRollbackMessage.startsWith('Verifierat nedladdat paket'));
+ assert.match(await page.locator('#rollback-verification').textContent(),/skiljer sig/);assert.equal(await page.evaluate(()=>lexlStore.readPrimaryRaw()),before);
+});
+
+test('integrated package preserves new data when the old localStorage key is missing',async t=>{
+ const {page}=await isolated(t);await page.evaluate(key=>localStorage.removeItem(key),key);
+ const result=await page.evaluate(async()=>{const b=await lexlStore.exportBeforeRollback(),z=LEXLBackupPackage.encode(b),round=LEXLBackupPackage.decode(z);return {verified:await lexlStore.verifyBundle(round),manifest:JSON.parse(round.manifestText),freshness:await lexlRollbackFreshness(round),original:round.files['localstorage-original-01114.json']}});
+ assert.equal(result.verified.verified,true);assert.equal(result.manifest.legacyChanged,true);assert.equal(result.manifest.sourceSnapshot.legacyMissing,true);assert.equal(result.freshness,'');assert.equal(result.original,JSON.stringify(f()));assert.equal(await page.evaluate(key=>localStorage.getItem(key),key),null);
+});
+
+test('integrated restart checks the latest committed SHA-256 receipt before publishing data',async t=>{
+ const {page}=await isolated(t);await page.evaluate(()=>newProgram());const original=await page.evaluate(key=>localStorage.getItem(key),key);
+ await page.evaluate(async()=>{await new Promise((resolve,reject)=>{const r=indexedDB.open('lexl-training-schema1',1);r.onsuccess=()=>{const db=r.result,tx=db.transaction('records','readwrite'),records=tx.objectStore('records'),get=records.get('current');get.onsuccess=()=>{const current=get.result,data=JSON.parse(current.raw);data.history[0].rows[0].weight='888';records.put({...current,raw:JSON.stringify(data)},'current')};tx.oncomplete=()=>{db.close();resolve()};tx.onabort=()=>reject(tx.error)};r.onerror=()=>reject(r.error)})});
+ await page.reload();await page.waitForFunction(()=>typeof lexlStore!=='undefined'&&lexlStore.initialized);
+ assert.equal(await page.evaluate(()=>!!lexlStore.blocked),true);assert.equal(await page.evaluate(()=>lexlStore.source),'legacy-readonly');assert.notEqual((await state(page)).history[0].rows[0].weight,'888');assert.match(await page.locator('#data-error').textContent(),/SHA-256-kvitto/);
+ const raw=await page.evaluate(()=>lexlStore.readPrimaryRaw());await page.evaluate(()=>newProgram());assert.equal(await page.evaluate(()=>lexlStore.readPrimaryRaw()),raw);assert.equal(await page.evaluate(key=>localStorage.getItem(key),key),original);
+});
+
+test('integrated optional pre-consent backup downloads the exact verified source and does not activate migration',async t=>{
+ const {page}=await isolated(t,{activate:false});await prepareThroughUI(page);const download=page.waitForEvent('download');
+ await page.getByRole('button',{name:'Ladda ned verifierad originalkopia (JSON, valfritt)',exact:true}).click();const file=await download,backup=JSON.parse(await fs.readFile(await file.path(),'utf8'));
+ const {createHash}=require('node:crypto');assert.equal(createHash('sha256').update(backup.payload,'utf8').digest('hex'),backup.sha256);assert.equal(JSON.parse(backup.payload).legacyRaw,JSON.stringify(f()));assert.equal(await page.evaluate(()=>lexlStore.readPrimaryRaw()),null);assert.equal(await page.getByRole('checkbox',{name:/Jag godkänner/}).isChecked(),false);
+ await approveThroughUI(page);assert.equal((await state(page)).storageRevision,1);
+});
+
+test('integrated uncertain first-save read after activation blocks retry and restores the saved action on reload',async t=>{
+ const {page}=await isolated(t,{raw:null}),count=(await state(page)).programs.length;
+ await page.evaluate(()=>{const add=IDBObjectStore.prototype.add,get=IDBObjectStore.prototype.get;let activated=false,failed=false;IDBObjectStore.prototype.add=function(v,k){const r=add.call(this,v,k);if(k==='activation')r.addEventListener('success',()=>{activated=true});return r};IDBObjectStore.prototype.get=function(k){const r=get.call(this,k);if(activated&&!failed&&k==='current'&&this.transaction.mode==='readonly'){failed=true;r.addEventListener('success',()=>this.transaction.abort(),{once:true})}return r}});
+ await page.evaluate(()=>newProgram());assert.equal((await state(page)).programs.length,count);assert.equal(await page.evaluate(()=>!!lexlStore.blocked),true);assert.match(await page.locator('#data-error').textContent(),/kan vara utförd/);
+ const saved=await page.evaluate(()=>lexlStore.readPrimaryRaw());assert.equal(JSON.parse(saved).programs.length,count+1);await page.evaluate(()=>newProgram());assert.equal(await page.evaluate(()=>lexlStore.readPrimaryRaw()),saved);
+ await page.reload();await page.waitForFunction(()=>typeof lexlStore!=='undefined'&&lexlStore.initialized);assert.equal(await page.evaluate(()=>lexlStore.source),'indexeddb');assert.equal((await state(page)).programs.length,count+1);assert.equal((await state(page)).storageRevision,1);
 });

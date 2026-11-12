@@ -1,111 +1,99 @@
-# LEXL 0.11.15 – etapp 1, teknisk granskningsrapport
+# LEXL 0.11.15 – slutrapport för etapp 1
 
-Transaktionsgrunden är implementerad på `dev/0.11.15`. En användarstyrd engångsövergång utreds nu inom etapp 1 som isolerad prototyp; produktintegration återstår efter planbeslut.
-Aktuellt beslut: principerna om orört localStorage-original och transaktionssäker IndexedDB är godkända. Ett permanent krav på manuell JSON-export/import för normal uppgradering är inte godkänt. Ny engångsplan finns i `MIGRERING-OCH-ATERGANG.md` och inväntar slutligt godkännande. Ingen faktisk övergång av verkliga data har utförts.
-Ingen merge, push, produktionspublicering eller överföring av verkliga träningsdata har gjorts. Etapp 2 är inte påbörjad.
+Status: **integrationen av den godkända planen och regressionstesterna är färdiga för granskning** på `dev/0.11.15`. Inga verkliga användardata har migrerats. Ingen push, merge, produktionspublicering eller etapp 2 har utförts.
 
-Bas: `0b49f20b165bab177fc1ab583509ffab744bf46f`, direkt förälder till implementationscommitten `29d70d407bcc3006f497f917559ed6f3d7fa6ff3`. Den gamla `work`-branchen har inte använts som utvecklingsbas.
+Godkänd produktionsbas: `0b49f20b165bab177fc1ab583509ffab744bf46f`. Utvecklingsbranchen skapades direkt från basen; `work` användes inte som utvecklingsbas. Implementationshistoriken och slutlig commit kan granskas med `git log`.
 
-## Ändrade filer
+## Filer och ansvar
 
-- `index.html`: gemensamma asynkrona sparvägar, skrivskyddad äldre läsning, fel/export/återförsök, kompatibilitetskopplingar, säker import och utvecklingsversionsmärkning. Äldre utkastmigreringar har kopplats bort.
-- `data-layer.js`: schema, identiteter, validering, snapshots och transaktionellt IndexedDB-lager.
-- `sw.js`: separat utvecklingscache inklusive datalagret för offlineanvändning.
-- `tests/data-layer.test.cjs`: isolerade modell- och kompatibilitetstester.
-- `tests/browser.test.cjs`: isolerade Chromium-tester med verklig IndexedDB, samtidiga flikar, injicerade fel och 17 nya prototyptester för engångsövergång/export.
-- `prototypes/one-time-transition.js`: isolerat övergångsprotokoll, inte laddat av appen; produktionsdatabasnamnet avvisas.
-- `docs/ETAPP1-SPEC.md`: användarens kompletta ursprungliga etappspecifikation.
-- `docs/ETAPP1-STATUS.md`: denna rapport, kompletterad med IndexedDB-villkoren från granskningen.
-- `docs/MIGRERING-OCH-ATERGANG.md`: ny användarstyrd engångs- och återgångsplan för slutlig granskning; normal uppgradering föreslås fungera utan manuell filrundtur.
-
-## Dataskydd och lagring
-
-`lexl-training-schema1`, databasversion 1, objektbutik `records`, är den nya lagringen. Träningsdatalagret använder endast `getItem` mot localStorage; det har inga localStorage-skrivvägar. Även äldre utkaståterställningsdata lämnas orörda. Äldre utseendeinställningar ärvs genom läsning, medan ändrade inställningar sparas under nya versionsspecifika nycklar.
-
-Uppstart skriver inga träningsposter. Helt saknade data ger standardprogram i minnet; oläsbar JSON eller ogiltig struktur blockerar skrivning och erbjuder råexport. En skadad IndexedDB-primär ersätts aldrig tyst med äldre localStorage-data. Även en senare ändrad primär med okänt format eller en skadad originalåterställningskopia stoppar nästa transaktion. En tom databas får skapas vid uppstart utan att innehålla träningsposter.
-
-När äldre localStorage-data finns men ingen IndexedDB-primär finns, visas de skrivskyddat. Vanliga sparförsök nekas. Användaren måste uttryckligen importera en säkerhetskopia och bekräfta lagringsbytet. Ingen automatisk migrering vid uppstart, första ändring eller återupptagning görs. Detta beskriver den tidigare, icke publicerade arbetskoden. Kravet ska ersättas av användarstyrd engångsövergång efter slutligt plangodkännande; den isolerade prototypen är ännu inte kopplad till appens startkod. Ingen verklig övergång har utförts.
-
-Nästa tillstånd byggs som en separat kopia, valideras och jämförs med basrevisionen. Aktivt state är djupfryst. En `readwrite`-transaktion med begärd strikt hållbarhet jämför aktuell revision och tidigare rådata, bevarar första originalet, sparar föregående tillstånd och skriver nytt tillstånd, ny revision samt ett unikt SHA-256-kvitto. Exakta data och återställningskopior läses tillbaka i transaktionen. Fel aborterar hela transaktionen.
-
-Appen väntar på `complete` och verifierar därefter kvitto och sparat tillstånd i en ny lästransaktion innan state publiceras eller status blir Sparat. Kvitton för de senaste 32 revisionerna behålls så att en efterkontroll inte felaktigt underkänner en korrekt skrivning bara för att en annan flik redan har sparat en senare revision.
-
-Om efterkontrollen misslyckas efter en slutförd transaktion kan ändringen redan vara sparad. Appen meddelar detta, behåller sitt tidigare aktiva state, erbjuder export av förslaget och blockerar nya skrivningar fram till omladdning. Ingen efterföljande automatisk rollback får skriva över en annan fliks senare ändring.
-
-En konkurrerande skrivare nekas i samma transaktion som annars skulle ersätta state. BroadcastChannel ger en extra synlig varning, men är inte själva samtidighetsskyddet. En ändring från en äldre app upptäcks genom jämförelse med den bevarade localStorage-källan; båda datakällorna bevaras och ingen automatisk sammanslagning görs.
-
-## Modell och historik
-
-| Fält | Hantering |
+| Fil | Ansvar |
 | --- | --- |
-| `schemaVersion` | 1 för nya tillstånd/exporter. Framtida okända rotversioner avvisas. |
-| `calculationVersion` | `legacy-unknown` för äldre pass; `0.11.14` för nya pass. Inga nya beräkningsregler införs. |
-| `programId` | Befintligt stabilt program-ID; `id` behålls som kompatibilitetsalias. |
-| `slotId` | Identitet för placeringen inom ett program. Programkopior får nya plats-ID:n. |
-| `exerciseId` | Global övningsidentitet. Uttryckligen gemensamma ID:n kan användas i flera program. Programkopior behåller dessa ID:n. |
-| Äldre övningar | Deterministisk, provisorisk identitet från program-ID och äldre plats-ID; inget anspråk på automatisk global sammanföring. |
-| `alternatives[]` | Eget `alternativeId` och separat `exerciseId`. Identiteter och kopiering är förberedda; inget nytt användarflöde införs. |
-| `sessionId` | Nya pass får UUID vid start, som behålls vid avslut. Äldre pass får deterministiskt postindex/fingeravtryck och skilda ID:n även för identiska poster. |
-| `workoutDate` | Uttryckligt kalenderdatum för nya pass. Äldre uttryckliga datum och datumvärden utan tid behålls. Saknas ett säkert datum förblir det `null`/`unknown`; en tidsstämpels datumdel gissas inte vara träningsdatum. |
-| `recordedAt` | Separat registreringstid för nya pass. Äldre okänd registreringstid förblir `null`. |
-| `snapshot` | Äldre poster bevaras före metadata-komplettering; nya pass bevarar utkastet vid avslut. |
-| `programSnapshot` | Programbild vid start. Den påverkas inte av senare programredigering eller radering. |
-| `storageRevision` | Kontrolleras i IndexedDB-transaktionen och ökas vid varje lyckad skrivning, även återställning. |
+| `data-layer.js` | Versionsstyrd modell, validering, kompatibilitetsmetadata, snapshots och det interna transaktionslagret. |
+| `storage-transition.js` | Verifierad säkerhetskopia, källbundet samtycke, transaktionell kopiering, aktiveringsmarkör, kontroll vid återstart och exportmanifest. |
+| `storage-session.js` | Appens enda lagringsingång. Förhindrar att en ofullbordad/overifierad kopia läses eller skrivs som primär. |
+| `backup-package.js` | Ett nedladdningsbart, begränsat ZIP-paket med JSON-filer och manifest; säker läsning, CRC32 och efterföljande SHA-256-verifiering. Inga externa produktionsbibliotek. |
+| `index.html` | Startintegration, tydligt samtyckeskort, skrivskydd, återupptagning, felhantering, export och verifiering av nedladdad ZIP. |
+| `sw.js` | Separat utvecklingscache som inkluderar samtliga nya moduler för offlineanvändning. |
+| `tests/data-layer.test.cjs` | Modell- och kompatibilitetsregressioner med syntetiska data. |
+| `tests/browser.test.cjs` | Verklig IndexedDB, faktiska formulärhändelser, samtidiga fönster, lagringsfel, avbrott, återstart och nedladdade paket i isolerad Chromium. |
+| `prototypes/one-time-transition.js` | Bevarad utredningsprototyp. Laddas inte av appen och ingår inte i service worker-cachen. |
+| `docs/ETAPP1-SPEC.md` | Ursprunglig komplett etappspecifikation. |
+| `docs/MIGRERING-OCH-ATERGANG.md` | Den godkända övergångs- och återgångsplanen, nu dokumenterad som integrerad. |
 
-Äldre pass utan uttryckligt program-ID lämnas omappade. Koppling görs endast med uttryckligt program-ID/äldre programreferens och entydigt plats-ID; ingen automatisk namnmatchning används. Redan omappade rader kopplas inte senare för att ett program tillkommer. Detta kan innebära att historik som tidigare namnmatchades inte används som förifyllningsreferens; ingen ny ranking- eller förifyllningsalgoritm har införts.
+## Appens beteende
 
-Träningsrader, set, vikter, repetitioner, tider, kommentarer, cirkelkopplingar och okända säkra historiska fält bevaras. Äldre `date` skrivs inte om. Visning av historiska tidsstämplar behåller tidigare lokal datumtolkning om uttryckligt träningsdatum saknas, även nära midnatt.
+| Situation | Resultat |
+| --- | --- |
+| Helt tom första uppstart | Standardprogram finns enbart i minnet. Ingen träningspost sparas automatiskt. Första uttryckliga sparåtgärden sparar just användarens ändringsförslag, verifierar det och skapar säker aktivering med ursprung `first-start`. |
+| Befintliga 0.11.14-data | Visas skrivskyddat. Användaren skapar/kontrollerar säkerhetskopian, läser sammanfattningen och markerar ett tydligt godkännande innan knappen för övergång aktiveras. Ingen manuell JSON-filrundtur krävs. |
+| Endast en äldre utkaståterställningspunkt | Räknas som befintliga data, inte en tom installation. Samtycke krävs; återställningspunkten bevaras och kan återupptas. Gränssnittet förklarar att huvudlagringen saknas och standardprogram används som grund. |
+| Nekad övergång, ”Inte nu – fortsätt läsa” | Ingen primär aktiveras. Äldre uppgifter är fortsatt läsbara och skrivskyddade. Valet behålls i sessionen vid omladdning. Användaren kan återuppta förberedelsen senare. |
+| Säkerhetskopiering misslyckas | Inget godkännandefält visas för en overifierad kopia och ingen primär skapas. Originalet bevaras. |
+| Kopiering avbryts/abortar | Tillstånd, revision och transaktionens skrivningar rullas tillbaka. En tidigare verifierad säkerhetskopia och övergångsförslag kan finnas kvar för explicit återupptagning. |
+| Kopia sparad men ingen aktiveringsmarkör | Kopian förblir inaktiv även efter en faktisk sidomladdning. Appen visar den äldre källan skrivskyddat och erbjuder fortsatt verifiering med förnyat användargodkännande. Ingen andra import eller dubblering av historik görs. |
+| Första sparningen avbryts | Det avsedda första ändringsförslaget bevaras i övergångsförslaget om förberedelsen hann sparas. Appen erbjuder återupptagning; den återställer inte tyst bara standardprogrammen. Ett identiskt redan sparat förslag rensas ur minnesbufferten först efter verifiering. Osäker läsning efter att aktiveringen redan sparats ger tydlig varning om att första sparningen kan vara utförd, blockerar återförsök och återläser den sparade åtgärden vid omstart. |
+| IndexedDB nekas, kvotfel, request-fel eller okänd version | Tydligt fel och skrivskydd; ingen reservskrivning till localStorage. Aktiva data ändras inte före verifierad framgång. Ett misslyckat ändringsförslag hålls separat för export/återförsök. |
+| Efterkontroll misslyckas efter commit | Appen förklarar att ändringen kan vara sparad, behåller tidigare aktivt state och blockerar fortsatt sparning tills omladdning/granskning. Ingen osäker rollback skriver över senare ändringar. |
+| Återstart med aktiv lagring | Aktiveringsmarkör, godkännande, originalbackup, ursprunglig kopia, schema/revision och senaste skrivkvittots SHA-256 verifieras innan IndexedDB-data publiceras. En giltigt formad men förändrad träningspost avvisas om kvittot inte matchar. |
+| Annan flik har sparat en ny revision | Gammal bas nekas genom revisions-/rådatakontroll i samma transaktion som annars skulle ersätta state. Osparat förslag kan exporteras. BroadcastChannel är en extra varning, inte själva låset. |
+| Gammal 0.11.14-flik ändrar sin källa | Ingen IndexedDB-data skrivs över. Skillnaden stoppar fortsatta nya skrivningar och kräver granskning. Exportpaketet kan bevara både ursprunglig och senare ändrad/raderad legacy-källa. |
+| Skadad JSON, backup, aktiveringsmarkör, kvitto eller okänd försökskopia | Ingen tyst nystart eller automatisk återställning över befintliga data. Appen visar felet och erbjuder råexport för granskning. Vanlig export får inte felaktigt presentera ett tomt reservstate som återvunna data. |
 
-`migrateCombo`, `migrateAntiRotation`, `migrateGroups` och den tidigare uppvärmningsmigreringen skriver inte om befintliga pass/utkast. Separata äldre sidböjnings- och axelpressrader förblir separata, med båda resultat- och kommentarsuppsättningarna kvar. Tider och summeringar räknas inte om vid import/migrering. Upprepade metadata-kompletteringar är idempotenta.
+## Exakt när IndexedDB blir primär
 
-Cirklar/superset som uttrycks via befintliga programlokala grupper bevaras. Gruppnamn återanvänds inte som global identitet. Någon separat superset-redigerare eller ny supersetmodell finns inte i basversionen och införs inte nu. Fria textalternativ i äldre anteckningar kopplas inte automatiskt till övnings-ID:n.
+1. Exakt råtext från äldre huvudlagring och eventuell utkaståterställning identifieras och valideras. Saknad nyckel skiljs från skadade data.
+2. En separat versionsmärkt backup sparas, transaktionen slutförs och backupen återläses. SHA-256 och hela innehållet verifieras **före** användarens godkännande. Den exakt verifierade originalkopian kan också laddas ned frivilligt före godkännandet; detta är inget krav för övergången.
+3. Ett övergångs-ID och backupens kontrollsumma binder godkännandet till den granskade källbilden. Om källan förändrats accepteras inte det tidigare godkännandet.
+4. Kopieringen använder IndexedDB-transaktion, basrevision, tidigare rådata och ett unikt SHA-256-kvitto. Därefter återläses och jämförs hela kopian. Historiska resultat räknas inte om.
+5. En aktiveringsmarkör sparas i en separat transaktion som åter kontrollerar kopia, reservägare, samtycke, backup och oförändrad källa.
+6. Markör och data återläses. Först efter lyckad verifiering publicerar `storage-session.js` IndexedDB som primär datakälla i appen. Varje senare uppstart har samma kontroll; förekomst av `current` räcker inte.
 
-## Export, import och återställning
+Alla normala sparvägar, import och återställning går genom denna lagringsingång. Den interna transaktionsadaptern kan därför inte användas som genväg av appens importgränssnitt. Träningsdatalagret har enbart läsadapter mot localStorage. Äldre tränings-/utkastnycklar skrivs eller raderas inte; ändrade utseendeinställningar använder separata 0.11.15-nycklar.
 
-Nya exporter innehåller schema- och beräkningsversion. Äldre exporter stöds genom kompatibilitetslagret. Import validerar hela JSON-strukturen och kända fälttyper före ersättning. Osäkra objektnycklar, ogiltiga/dubbla identiteter och okända framtida versioner avvisas. Gränser: 20 MiB UTF-8, 32 nivåers djup och 500 000 JSON-värden. Överdimensionerade nya exporter/sparförslag stoppas innan en fil eller ett tillstånd som inte kan återimporteras produceras.
+## Modell och bevarad historik
 
-Första originalkopian och föregående tillstånd finns i samma IndexedDB som state, men i separata poster. De sparas atomiskt med ersättningen, kan exporteras som rå JSON och återimporteras som en ny revision. Den första originalkopian skrivs aldrig över. Vid första uppstart utan tidigare data är originalet uttryckligen tomt (`null`).
+- `schemaVersion: 1` för tillstånd och nya vanliga JSON-exporter. Okända framtida versioner avvisas.
+- `calculationVersion: legacy-unknown` för äldre pass och `0.11.14` för nya pass. Inga nya beräkningsregler har införts.
+- Stabilt `programId`, separat `slotId` för placering och globalt `exerciseId`. Programkopior behåller övningsidentiteter men får nya program-/plats-ID:n. Alternativ har eget `alternativeId` och separat övningsidentitet; inget nytt alternativflöde införs.
+- Nya pass får UUID vid start och behåller samma `sessionId` vid avslut. Äldre ID-lösa poster får deterministiska metadata-ID:n som materialiseras i den nya kopian och exporter, aldrig i localStorage-originalet.
+- Äldre historikrader kopplas bara med uttrycklig programreferens och entydig placering. Ingen automatisk namnmatchning eller senare automatisk sammanföring av omappade poster görs.
+- Nya `workoutDate` hålls separat från `recordedAt`. Äldre uttryckliga datum och rena datumvärden behålls. Om säkert träningsdatum saknas lämnas det okänt; gamla tidsstämplar skrivs inte om och byter inte tyst kalenderdag nära midnatt.
+- Historiska snapshots bevaras. Nya pass har programbild vid start och utkastbild vid avslut. Senare programändring eller radering ändrar inte sparade historiska poster.
+- Rader, set, vikter, repetitioner, tider, summeringar, kommentarer, cirkelkopplingar och okända säkra historiska fält bevaras utan migreringsberäkning. Äldre separata sidböjnings-/axelpressrader förblir separata.
+- De tidigare destruktiva combo-/grupp-/uppvärmningsmigreringarna körs inte på befintliga pass eller utkast. Äldre utkaståterställning raderas inte, och ett redan avslutat återställt pass erbjuds inte igen efter omstart.
+- Cirklar/superset som representeras med befintliga programlokala grupper bevaras. En separat ny supersetmodell eller redigerare införs inte.
 
-Tidigare utkaståterställningsnyckel läses och valideras för kompatibilitet, men raderas inte när ett pass avslutas. Ett redan avslutat återställt pass erbjuds inte igen efter omladdning. En misslyckad import ändrar inte aktivt state och en aborterad transaktion ändrar inga beständiga poster. Ett misslyckat ändringsförslag hålls separat och kan exporteras eller återförsökas; nya vanliga ändringar får inte tyst ersätta det.
+## Export, import och återgångspaket
 
-## Regressionstester
+Vanlig JSON-export/import är fortsatt tillgänglig för säkerhetskopiering och uttrycklig återställning efter aktivering. Hela importen valideras före ersättning; föregående tillstånd och permanent första originalkopia bevaras transaktionellt. En framtida schemaversion, osäkra strukturer eller misslyckad skrivning ersätter inte befintliga data.
 
-Manuellt körda kommandon:
+Inför återgång skapas **en ZIP-nedladdning** med fullständiga 0.11.15-data, exakt localStorage-original, eventuell äldre utkaståterställning, nya pass för granskning och `manifest.json`. Ändrade/raderade äldre pass särredovisas. Ändrad aktuell legacy-källa och eventuellt osparat arbete tas med separat. Saknad original-/återställningskälla representeras uttryckligt i manifestet, inte som påhittade gamla data.
+
+ZIP-filerna är okomprimerade och UTF-8-kodade; filnamn, antal filer, storlekar, gränser, filhuvuden och CRC32 kontrolleras. Manifestet innehåller SHA-256 och UTF-8-storlek för varje fil. Paketet verifieras före nedladdning och användaren kan välja den faktiskt sparade ZIP-filen för ny kontroll. Ett intakt men äldre/avvikande paket märks som sådant vid jämförelse med appens aktuella rådata, inte bara revisionsnumret. Verifiering importerar eller konverterar ingenting.
+
+Gränser: vanliga tillstånd/importer 20 MiB UTF-8, 32 JSON-nivåer och 500 000 värden. Pakettransporten begränsas till 128 MiB och högst 9 filer. Stora eller osäkra data ger fel; historik raderas aldrig automatiskt för att skapa plats.
+
+Återgång: stoppa registreringar, stäng andra appfönster, spara ZIP utanför webbläsaren och verifiera den sparade filen. Behåll både IndexedDB och localStorage. 0.11.14 läser endast sin tidigare localStorage-källa; nya IndexedDB-pass följer inte automatiskt med. Om legacy-källan ändrats eller inte validerar krävs granskning före återgång. Ingen nedkonvertering, återimport till 0.11.14 eller automatisk versionspublicering ingår.
+
+## Testresultat och reproduktion
+
+**103 godkända tester, 0 misslyckade:** 24 modelltester och 79 Chromium-tester. Detta omfattar tidigare grund-/prototypregressioner och 20 nya integrerade acceptanstester.
 
 ```sh
-node --test tests/data-layer.test.cjs
-node --test tests/browser.test.cjs
+node --test tests/*.test.cjs
 ```
 
-Senaste slutkontroll: **83 godkända, 0 misslyckade** (24 modelltester och 59 Chromium-tester, varav 17 nya prototyptester). Inga schemalagda tester har skapats. Samtliga använder syntetiska data och isolerade lagringsobjekt eller nya webbläsar-contexts med en tillfällig localhost-origin. Testerna skriver aldrig till en verklig LEXL-origin eller verklig träningshistorik.
+Miljö: Node.js 24.22.1, Playwright 1.62.1 och systemets Chromium 156.0.8078.79. Python 3:s standardbibliotek `zipfile` används för oberoende kontroll av den faktiska ZIP-nedladdningen. Inga nya produktionsberoenden eller schemalagda tester har skapats.
 
-| Specifikationens testområde | Verifierat |
-| --- | --- |
-| Giltig, första, skadad och strukturellt ogiltig uppstart | Läsning utan automatisk träningsskrivning; fel blockerar sparning; råexport fungerar. |
-| Uppgradering och äldre exporter | Manuell import aktiverar IndexedDB; omstart väljer primären; gamla nycklar är oförändrade. |
-| Felaktig/ofullständig/framtida import | Avvisas utan dataersättning; även osäkra objekt och stora UTF-8-filer prövas. |
-| Idempotens, äldre kombinationsövningar och kommentarer | Alla ursprungliga värden och rader bevaras genom import, uppstart och passavslut. |
-| Programkopior, grupper, globala/alternativa identiteter och lika namn | Nya platser, bevarade övningsidentiteter och inga namnkopplingar. |
-| Historiska snapshots efter programändring/radering | Oförändrade historiska resultat, anteckningar och ögonblicksbilder. |
-| Träningsdatum och sortering | Uttryckligt datum styr ny historik; äldre tidsstämplar skiftar inte tyst kalenderdag. |
-| Export/import/återställning | Filer laddas ned, läses tillbaka och återställs med ny revision; permanent original bevaras. |
-| Kvotfel, request-fel, transaktionsabort och verifieringsfel | Fel injiceras före/efter lyckad `put`, på olika poster och efter commit. Ingen tyst framgång eller osäker rollback. |
-| Otillgänglig IndexedDB och framtida databasversion | Skrivning nekas utan localStorage-fallback eller radering. |
-| Samtidiga fönster | 20 konkurrerande transaktioner accepterar exakt en skrivare på samma bas. Tio omgångar med två verkliga appflikar ger exakt en godkänd ändring per omgång. |
-| Formulär, offline och äldre inställningar | Faktiska formulärhändelser sparas korrekt; service worker/offline fungerar; gamla tränings- och inställningsnycklar bevaras. |
+Samtliga tester använder syntetiska data, isolerade lagringsobjekt eller nya headless browser-contexts med en tillfällig localhost-origin. Inga verkliga träningsdata eller riktiga LEXL-origin används.
 
-Det tidigare underkända localStorage/Web Locks-skyddet är borttaget och ersatt med IndexedDB-transaktioner. Det nya samtidighetsskyddet använder inte Web Locks.
+Särskilt verifierat: första uppstart och första sparning; normal godkänd övergång utan filrundtur; nekad övergång och omladdning; backup före samtycke; abort efter lyckad `put`; kvotfel i flera skeden; faktisk sidomladdning före aktivering; återupptagning utan dubblering; saknad/skadad markör, backup eller kvitto; återställningspunkt utan huvudlagring; 20 konkurrerande transaktioner; tio omgångar med två riktiga appflikar; dubbla övergångsgodkännanden; historik, kommentarer, cirklar och kombinationsrader; datum nära midnatt; import/export och snapshots; offline-cache; mobil samtyckesvy; faktisk ZIP-nedladdning och återläsning; frivillig verifierad originalnedladdning före samtycke; skadat/ofullständigt/gammalt paket; osparat arbete och saknad senare legacy-källa.
 
-Webbläsartester kräver Node.js, Playwright och Chromium (`CHROMIUM_PATH`, standard `/usr/bin/chromium`). Modelltesterna kräver endast Node.js. Testmiljö: Node.js 24.22.1, Playwright 1.62.1 och Chromium 156.0.8078.79 på Linux. Ingen ny produktionsdependency behövs.
+## Begränsningar och stoppunkt
 
-## Begränsningar, återgång och beslut
-
-- 0.11.14 kan läsa sitt bevarade localStorage-original men inte direkt läsa nya IndexedDB-poster. Nya pass får inte förväntas följa med tillbaka automatiskt. Följ den separata planen; radera inte någon datakälla.
-- Automatisk migrering, nedgradering, konvertering och synkning av gamla/nya datakällor ingår inte. Ett permanent manuellt export/importkrav är inte godkänt. Den nya användarstyrda engångsplanen inväntar slutlig granskning; ingen verklig dataövergång har utförts.
-- Skadad källa eller skillnader mellan gamla och nya datakällor kräver export/granskning före reparation. Ingen destruktiv självreparation finns.
-- Enhetsverifieringen omfattar Chromium. Andra webbläsare måste verifieras före produktionsbeslut; otillräckligt databas-/kryptostöd ska blockera sparning.
-- Snapshots och återställningskopior tar plats. Kvotfel får aldrig lösas genom automatisk radering av äldre historik.
-- Äldre omappade identiteter och fria textalternativ kräver uttryckliga mappningsbeslut inför senare etapper.
-- Etapp 2, merge till main och produktion kräver separata godkännanden.
-
-Den nya prototypen visar också att en kopia som hunnit sparas men saknar verifierad aktiveringsmarkör inte får bli primär vid omstart. Denna kontroll måste integreras i alla riktiga startvägar innan prototypen kan ersätta den tidigare arbetskodens importkrav. Se den separata planens avsnitt om kvarstående integration och exportpaketering.
+- Webbläsarverifieringen omfattar Chromium, inklusive mobil vy. Firefox/WebKit har inte körts; målwebbläsare behöver verifieras inför ett separat produktionsbeslut.
+- Intern backup finns på samma enhet/origin. Ett verifierat externt ZIP-paket behövs för skydd om användaren raderar webbplatsdata eller enheten går förlorad.
+- Vid ett skrivfel före all beständig lagring kan osparat arbete enbart finnas i minnet. Appen visar felet och erbjuder export; stängning av sidan kan inte garanterat bevara sådana uppgifter.
+- En gammal 0.11.14-flik deltar inte i det nya protokollet. Källorna bevaras separat och skillnader stoppar nya skrivningar; ingen automatisk sammanslagning/reparation görs.
+- Äldre omappade identiteter och fria textalternativ kräver uttryckliga beslut i senare etapper. Ingen ny förifyllning, statistik, papperskorg, belastningsmodell, nedvarvning eller programnavigation har införts.
+- Etapp 1 stannar här för teknisk granskning. Merge till main, produktionspublicering och etapp 2 kräver separata godkännanden.
