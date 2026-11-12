@@ -1,7 +1,7 @@
 # LEXL 0.11.15 – etapp 1, teknisk granskningsrapport
 
-Teknisk implementation: färdig för granskning på `dev/0.11.15`.
-Manuell dataövergångs- och återgångsplan: **godkänd av användaren**; se `MIGRERING-OCH-ATERGANG.md`. Ingen faktisk aktivering eller övergång av verkliga data har utförts. Den tekniska implementationen av etapp 1 inväntar fortsatt granskning.
+Transaktionsgrunden är implementerad på `dev/0.11.15`. En användarstyrd engångsövergång utreds nu inom etapp 1 som isolerad prototyp; produktintegration återstår efter planbeslut.
+Aktuellt beslut: principerna om orört localStorage-original och transaktionssäker IndexedDB är godkända. Ett permanent krav på manuell JSON-export/import för normal uppgradering är inte godkänt. Ny engångsplan finns i `MIGRERING-OCH-ATERGANG.md` och inväntar slutligt godkännande. Ingen faktisk övergång av verkliga data har utförts.
 Ingen merge, push, produktionspublicering eller överföring av verkliga träningsdata har gjorts. Etapp 2 är inte påbörjad.
 
 Bas: `0b49f20b165bab177fc1ab583509ffab744bf46f`, direkt förälder till implementationscommitten `29d70d407bcc3006f497f917559ed6f3d7fa6ff3`. Den gamla `work`-branchen har inte använts som utvecklingsbas.
@@ -12,10 +12,11 @@ Bas: `0b49f20b165bab177fc1ab583509ffab744bf46f`, direkt förälder till implemen
 - `data-layer.js`: schema, identiteter, validering, snapshots och transaktionellt IndexedDB-lager.
 - `sw.js`: separat utvecklingscache inklusive datalagret för offlineanvändning.
 - `tests/data-layer.test.cjs`: isolerade modell- och kompatibilitetstester.
-- `tests/browser.test.cjs`: isolerade Chromium-tester med verklig IndexedDB, samtidiga flikar och injicerade fel.
+- `tests/browser.test.cjs`: isolerade Chromium-tester med verklig IndexedDB, samtidiga flikar, injicerade fel och 17 nya prototyptester för engångsövergång/export.
+- `prototypes/one-time-transition.js`: isolerat övergångsprotokoll, inte laddat av appen; produktionsdatabasnamnet avvisas.
 - `docs/ETAPP1-SPEC.md`: användarens kompletta ursprungliga etappspecifikation.
 - `docs/ETAPP1-STATUS.md`: denna rapport, kompletterad med IndexedDB-villkoren från granskningen.
-- `docs/MIGRERING-OCH-ATERGANG.md`: separat aktiverings- och återgångsplan, nu godkänd av användaren.
+- `docs/MIGRERING-OCH-ATERGANG.md`: ny användarstyrd engångs- och återgångsplan för slutlig granskning; normal uppgradering föreslås fungera utan manuell filrundtur.
 
 ## Dataskydd och lagring
 
@@ -23,7 +24,7 @@ Bas: `0b49f20b165bab177fc1ab583509ffab744bf46f`, direkt förälder till implemen
 
 Uppstart skriver inga träningsposter. Helt saknade data ger standardprogram i minnet; oläsbar JSON eller ogiltig struktur blockerar skrivning och erbjuder råexport. En skadad IndexedDB-primär ersätts aldrig tyst med äldre localStorage-data. Även en senare ändrad primär med okänt format eller en skadad originalåterställningskopia stoppar nästa transaktion. En tom databas får skapas vid uppstart utan att innehålla träningsposter.
 
-När äldre localStorage-data finns men ingen IndexedDB-primär finns, visas de skrivskyddat. Vanliga sparförsök nekas. Användaren måste uttryckligen importera en säkerhetskopia och bekräfta lagringsbytet. Ingen automatisk migrering vid uppstart, första ändring eller återupptagning görs. Planen för den manuella dataövergången är nu godkänd, men ingen faktisk övergång av verkliga användardata har utförts.
+När äldre localStorage-data finns men ingen IndexedDB-primär finns, visas de skrivskyddat. Vanliga sparförsök nekas. Användaren måste uttryckligen importera en säkerhetskopia och bekräfta lagringsbytet. Ingen automatisk migrering vid uppstart, första ändring eller återupptagning görs. Detta beskriver den tidigare, icke publicerade arbetskoden. Kravet ska ersättas av användarstyrd engångsövergång efter slutligt plangodkännande; den isolerade prototypen är ännu inte kopplad till appens startkod. Ingen verklig övergång har utförts.
 
 Nästa tillstånd byggs som en separat kopia, valideras och jämförs med basrevisionen. Aktivt state är djupfryst. En `readwrite`-transaktion med begärd strikt hållbarhet jämför aktuell revision och tidigare rådata, bevarar första originalet, sparar föregående tillstånd och skriver nytt tillstånd, ny revision samt ett unikt SHA-256-kvitto. Exakta data och återställningskopior läses tillbaka i transaktionen. Fel aborterar hela transaktionen.
 
@@ -76,7 +77,7 @@ node --test tests/data-layer.test.cjs
 node --test tests/browser.test.cjs
 ```
 
-Senaste slutkontroll: **66 godkända, 0 misslyckade** (24 modelltester och 42 Chromium-tester). Inga schemalagda tester har skapats. Samtliga använder syntetiska data och isolerade lagringsobjekt eller nya webbläsar-contexts med en tillfällig localhost-origin. Testerna skriver aldrig till en verklig LEXL-origin eller verklig träningshistorik.
+Senaste slutkontroll: **83 godkända, 0 misslyckade** (24 modelltester och 59 Chromium-tester, varav 17 nya prototyptester). Inga schemalagda tester har skapats. Samtliga använder syntetiska data och isolerade lagringsobjekt eller nya webbläsar-contexts med en tillfällig localhost-origin. Testerna skriver aldrig till en verklig LEXL-origin eller verklig träningshistorik.
 
 | Specifikationens testområde | Verifierat |
 | --- | --- |
@@ -100,9 +101,11 @@ Webbläsartester kräver Node.js, Playwright och Chromium (`CHROMIUM_PATH`, stan
 ## Begränsningar, återgång och beslut
 
 - 0.11.14 kan läsa sitt bevarade localStorage-original men inte direkt läsa nya IndexedDB-poster. Nya pass får inte förväntas följa med tillbaka automatiskt. Följ den separata planen; radera inte någon datakälla.
-- Automatisk migrering, nedgradering, konvertering och synkning av gamla/nya datakällor ingår inte. Den manuella planen är uttryckligen godkänd; ingen övergång av verkliga användardata har utförts.
+- Automatisk migrering, nedgradering, konvertering och synkning av gamla/nya datakällor ingår inte. Ett permanent manuellt export/importkrav är inte godkänt. Den nya användarstyrda engångsplanen inväntar slutlig granskning; ingen verklig dataövergång har utförts.
 - Skadad källa eller skillnader mellan gamla och nya datakällor kräver export/granskning före reparation. Ingen destruktiv självreparation finns.
 - Enhetsverifieringen omfattar Chromium. Andra webbläsare måste verifieras före produktionsbeslut; otillräckligt databas-/kryptostöd ska blockera sparning.
 - Snapshots och återställningskopior tar plats. Kvotfel får aldrig lösas genom automatisk radering av äldre historik.
 - Äldre omappade identiteter och fria textalternativ kräver uttryckliga mappningsbeslut inför senare etapper.
 - Etapp 2, merge till main och produktion kräver separata godkännanden.
+
+Den nya prototypen visar också att en kopia som hunnit sparas men saknar verifierad aktiveringsmarkör inte får bli primär vid omstart. Denna kontroll måste integreras i alla riktiga startvägar innan prototypen kan ersätta den tidigare arbetskodens importkrav. Se den separata planens avsnitt om kvarstående integration och exportpaketering.

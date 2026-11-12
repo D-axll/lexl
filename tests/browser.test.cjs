@@ -306,3 +306,168 @@ test('damaged original recovery point blocks replacement and preserves current a
  });
  assert.match(result.error,/Återställningskopian kunde inte valideras/);assert.equal(result.revision,1);assert.equal(result.unchanged,true);assert.equal(result.previousUnchanged,true);
 });
+
+// The one-time transition investigation is never loaded by the application.
+async function transitionCase(t, scenario) {
+ const {page,errors}=await isolated(t,{raw:null});
+ await page.addScriptTag({url:url+'/prototypes/one-time-transition.js'});
+ const result=await page.evaluate(scenario,f());
+ assert.deepEqual(errors,[]);return result;
+}
+
+test('transition prototype is absent from normal app and rejects production database names',async t=>{
+ const {page}=await isolated(t,{raw:null});
+ assert.equal(await page.evaluate(()=>typeof LEXLMigrationPrototype),'undefined');
+ await page.addScriptTag({url:url+'/prototypes/one-time-transition.js'});
+ assert.match(await page.evaluate(()=>{try{LEXLMigrationPrototype.create({dbName:'lexl-training-schema1',readLegacy:()=>null})}catch(e){return e.message}}),/isolerad/);
+});
+
+test('transition prepares verified source and draft backup before consent, without copying primary',async t=>{
+ const result=await transitionCase(t,async fixture=>{
+  const raw=JSON.stringify(fixture),recovery=JSON.stringify({draft:{id:'synthetic-p',name:'Synthetic recovery',started:'2026-11-01T12:00:00Z',rows:[{id:'synthetic-x',name:'Synthetic exercise',weight:'9',reps:'8',set:1,done:true}],comments:{'synthetic-x':'Recovery note'},circleGroups:{'synthetic-x':'1'}}});
+  const p=LEXLMigrationPrototype.create({dbName:'lexl-prototype-prepare',readLegacy:()=>raw,readRecovery:()=>recovery});
+  const summary=await p.prepare(),status=await p.inspect();let rejected='';try{await p.confirm(summary.id,{approved:false,backupSha256:summary.backupSha256})}catch(e){rejected=e.message}
+  const after=await p.inspect();p.close();return {summary,status,rejected,after,rawUnchanged:raw===JSON.stringify(fixture)};
+ });
+ assert.equal(result.summary.sessions,1);assert.equal(result.summary.recovery,true);assert.equal(result.summary.primaryActivated,false);assert.equal(result.status.primary,'legacy-readonly');assert.equal(result.status.copiedButInactive,false);assert.equal(result.after.copiedButInactive,false);assert.match(result.rejected,/godkännande/);assert.equal(result.rawUnchanged,true);
+});
+
+test('explicit one-time transition preserves legacy training values and needs no export/import file',async t=>{
+ const result=await transitionCase(t,async fixture=>{
+  fixture.draft={id:'synthetic-p',name:'Synthetic ongoing',started:'2026-11-01T12:00:00Z',rows:[{id:'synthetic-x',name:'Synthetic exercise',weight:'18.5',reps:'6',set:1,done:true}],comments:{'synthetic-x':'Ongoing note'},warmup:[],circleGroups:{'synthetic-x':'1'}};
+  const raw=JSON.stringify(fixture),options={dbName:'lexl-prototype-success',readLegacy:()=>raw},p=LEXLMigrationPrototype.create(options);
+  const summary=await p.prepare(),active=await p.confirm(summary.id,{approved:true,backupSha256:summary.backupSha256});
+  const copy=JSON.parse(active.backup.payload),originalDraft=fixture.draft;
+  p.close();const reopened=LEXLMigrationPrototype.create(options),boot=await reopened.inspect();reopened.close();
+  return {primary:active.primary,revision:active.revision,raw:copy.legacyRaw,weight:active.state.draft.rows[0].weight,reps:active.state.draft.rows[0].reps,comments:active.state.draft.comments,circles:active.state.draft.circleGroups,history:active.state.history[0],boot:boot.primary,sourceUnchanged:raw===JSON.stringify(fixture)};
+ });
+ assert.equal(result.primary,'indexeddb');assert.equal(result.boot,'indexeddb');assert.equal(result.revision,1);assert.equal(result.weight,'18.5');assert.equal(result.reps,'6');assert.equal(result.comments['synthetic-x'],'Ongoing note');assert.equal(result.circles['synthetic-x'],'1');assert.equal(result.history.rows[0].weight,'7.5');assert.equal(result.history.warmupMinutes,1.5);assert.equal(result.sourceUnchanged,true);
+});
+
+for(const kind of ['primary','recovery'])test('transition rejects '+kind+' source changed after verified backup',async t=>{ const {page:browserPage}=await isolated(t,{raw:null});await browserPage.addScriptTag({url:url+'/prototypes/one-time-transition.js'});
+ const outcome=await browserPage.evaluate(async({fixture,kind})=>{
+  let raw=JSON.stringify(fixture),recovery=null;const p=LEXLMigrationPrototype.create({dbName:'lexl-prototype-change-'+kind,readLegacy:()=>raw,readRecovery:()=>recovery});const s=await p.prepare();if(kind==='primary')raw+=' ';else recovery='changed';let error='';try{await p.confirm(s.id,{approved:true,backupSha256:s.backupSha256})}catch(e){error=e.message}const state=await p.inspect();p.close();return {error,state};
+ },{fixture:f(),kind});
+ assert.match(outcome.error,/källan har ändrats/);assert.equal(outcome.state.primary,'legacy-readonly');assert.equal(outcome.state.copiedButInactive,false);
+});
+
+test('transition backup quota failure leaves no primary and no consent',async t=>{
+ const result=await transitionCase(t,async fixture=>{
+  const raw=JSON.stringify(fixture),p=LEXLMigrationPrototype.create({dbName:'lexl-prototype-backup-quota',readLegacy:()=>raw}),add=IDBObjectStore.prototype.add;
+  IDBObjectStore.prototype.add=function(value,key){if(String(key).startsWith('backup:'))throw new DOMException('Synthetic backup quota','QuotaExceededError');return add.call(this,value,key)};
+  let error='';try{await p.prepare()}catch(e){error=e.message}finally{IDBObjectStore.prototype.add=add}
+  const status=await p.inspect();p.close();return {error,status,unchanged:raw===JSON.stringify(fixture)};
+ });
+ assert.match(result.error,/quota/);assert.equal(result.status.primary,'legacy-readonly');assert.equal(result.status.pendingProposalId,null);assert.equal(result.unchanged,true);
+});
+
+test('transition copy abort keeps verified backup; explicit retry completes exactly once',async t=>{
+ const result=await transitionCase(t,async fixture=>{
+  const raw=JSON.stringify(fixture),p=LEXLMigrationPrototype.create({dbName:'lexl-prototype-copy-abort',readLegacy:()=>raw}),s=await p.prepare(),put=IDBObjectStore.prototype.put;
+  IDBObjectStore.prototype.put=function(value,key){const r=put.call(this,value,key);if(key==='current')r.addEventListener('success',()=>this.transaction.abort(),{once:true});return r};
+  let error='';try{await p.confirm(s.id,{approved:true,backupSha256:s.backupSha256})}catch(e){error=e.message}finally{IDBObjectStore.prototype.put=put}
+  const failed=await p.inspect(),active=await p.confirm(s.id,{approved:true,backupSha256:s.backupSha256}),repeat=await p.confirm(s.id,{approved:true,backupSha256:s.backupSha256});
+  const result={error,failed,revision:active.revision,repeatRevision:repeat.revision,raw:JSON.parse(active.backup.payload).legacyRaw};p.close();return result;
+ });
+ assert.match(result.error,/avbröts|abort/i);assert.equal(result.failed.primary,'legacy-readonly');assert.equal(result.failed.copiedButInactive,false);assert.equal(result.revision,1);assert.equal(result.repeatRevision,1);assert.equal(result.raw,JSON.stringify(f()));
+});
+
+test('interruption before activation leaves staged copy inactive after restart; explicit resume verifies it',async t=>{
+ const result=await transitionCase(t,async fixture=>{
+  const raw=JSON.stringify(fixture),options={dbName:'lexl-prototype-activation-failure',readLegacy:()=>raw},p=LEXLMigrationPrototype.create(options),s=await p.prepare(),add=IDBObjectStore.prototype.add;
+  IDBObjectStore.prototype.add=function(value,key){if(key==='activation')throw new DOMException('Synthetic activation quota','QuotaExceededError');return add.call(this,value,key)};
+  let error='';try{await p.confirm(s.id,{approved:true,backupSha256:s.backupSha256})}catch(e){error=e.message}finally{IDBObjectStore.prototype.add=add}
+  p.close();const reopened=LEXLMigrationPrototype.create(options),before=await reopened.inspect();let saveError='';try{await reopened.save(next=>next.history=[])}catch(e){saveError=e.message}
+  const active=await reopened.confirm(s.id,{approved:true,backupSha256:s.backupSha256});reopened.close();return {error,before,saveError,revision:active.revision};
+ });
+ assert.match(result.error,/quota/);assert.equal(result.before.primary,'legacy-readonly');assert.equal(result.before.copiedButInactive,true);assert.match(result.saveError,/aktivering/);assert.equal(result.revision,1);
+});
+
+test('transition refuses damaged backup and leaves original source unchanged',async t=>{
+ const result=await transitionCase(t,async fixture=>{
+  const raw=JSON.stringify(fixture),dbName='lexl-prototype-damaged-backup',p=LEXLMigrationPrototype.create({dbName,readLegacy:()=>raw}),s=await p.prepare();
+  await new Promise((resolve,reject)=>{const r=indexedDB.open(dbName,1);r.onsuccess=()=>{const db=r.result,tx=db.transaction('records','readwrite');tx.objectStore('records').put({format:'lexl-transition-backup-v1',payload:'tampered',sha256:s.backupSha256},'backup:'+s.id);tx.oncomplete=()=>{db.close();resolve()};tx.onabort=()=>reject(tx.error)};r.onerror=()=>reject(r.error)});
+  let error='';try{await p.confirm(s.id,{approved:true,backupSha256:s.backupSha256})}catch(e){error=e.message}const status=await p.inspect();p.close();return {error,status,raw};
+ });
+ assert.match(result.error,/Säkerhetskopian/);assert.equal(result.status.copiedButInactive,false);assert.equal(result.raw,JSON.stringify(f()));
+});
+
+test('transition new-session export preserves original, hashes all files and never converts old data',async t=>{
+ const result=await transitionCase(t,async fixture=>{
+  const raw=JSON.stringify(fixture),p=LEXLMigrationPrototype.create({dbName:'lexl-prototype-export',readLegacy:()=>raw}),s=await p.prepare();await p.confirm(s.id,{approved:true,backupSha256:s.backupSha256});
+  await p.save(next=>{const program=next.programs[0],e=program.exercises[0];next.history.push({...LEXLData.newSession(program,()=> 'synthetic-new-session','2026-11-12T12:00:00Z','2026-11-12'),name:'Synthetic new session',date:'2026-11-12T12:00:00Z',rows:[{id:e.id,exerciseId:e.exerciseId,slotId:e.slotId,name:e.name,set:1,weight:'19.5',reps:'8',done:true}],comments:{[e.id]:'New synthetic note'},circleGroups:{[e.id]:'1'}})});
+  const bundle=await p.exportBeforeRollback(),verified=await LEXLMigrationPrototype.verifyBundle(bundle),manifest=JSON.parse(bundle.manifestText),review=JSON.parse(bundle.files['new-sessions-review.json']);
+  let corruptionError='';const altered=LEXLData.copy(bundle);altered.files['indexeddb-01115.json']+=' ';try{await LEXLMigrationPrototype.verifyBundle(altered)}catch(e){corruptionError=e.message}
+  let oldImportRejected=false;try{LEXLData.importData(bundle.files['new-sessions-review.json'])}catch{oldImportRejected=true}
+  const native=LEXLData.importData(bundle.files['indexeddb-01115.json']);const result={verified,manifest,review,original:bundle.files['localstorage-original-01114.json'],nativeSessions:native.history.length,corruptionError,oldImportRejected,sourceUnchanged:raw===JSON.stringify(fixture)};p.close();return result;
+ });
+ assert.equal(result.verified.verified,true);assert.equal(result.verified.newSessions,1);assert.equal(result.verified.revision,2);assert.equal(result.review.sessions[0].rows[0].weight,'19.5');assert.equal(result.review.sessions[0].comments['synthetic-x'],'New synthetic note');assert.equal(result.nativeSessions,2);assert.equal(result.original,JSON.stringify(f()));assert.equal(result.sourceUnchanged,true);assert.match(result.corruptionError,/verifieras/);assert.equal(result.oldImportRejected,true);assert.match(result.manifest.warning,/Importera inte/);
+});
+
+test('rollback export identifies edits and removals of old sessions separately from new sessions',async t=>{
+ const result=await transitionCase(t,async fixture=>{
+  fixture.history.push({...LEXLData.copy(fixture.history[0]),name:'Synthetic second old session'});
+  const raw=JSON.stringify(fixture),p=LEXLMigrationPrototype.create({dbName:'lexl-prototype-delta',readLegacy:()=>raw}),s=await p.prepare();await p.confirm(s.id,{approved:true,backupSha256:s.backupSha256});
+  await p.save(next=>{next.history[0].comments['synthetic-x']='Explicit edit';next.history.pop()});
+  const bundle=await p.exportBeforeRollback(),result=await LEXLMigrationPrototype.verifyBundle(bundle);p.close();return result;
+ });
+ assert.equal(result.newSessions,0);assert.equal(result.changedSessions,1);assert.equal(result.removedSessions,1);
+});
+
+test('rollback export retains both legacy snapshots if an old app has changed localStorage',async t=>{
+ const result=await transitionCase(t,async fixture=>{
+  let raw=JSON.stringify(fixture);const original=raw,p=LEXLMigrationPrototype.create({dbName:'lexl-prototype-old-tab',readLegacy:()=>raw}),s=await p.prepare();await p.confirm(s.id,{approved:true,backupSha256:s.backupSha256});
+  raw=JSON.stringify({...fixture,history:[]});let saveError='';try{await p.save(next=>next.history=[])}catch(e){saveError=e.message}
+  const bundle=await p.exportBeforeRollback(),verified=await LEXLMigrationPrototype.verifyBundle(bundle);p.close();return {saveError,verified,original:bundle.files['localstorage-original-01114.json'],current:bundle.files['localstorage-current-raw.json'],expectedOriginal:original,expectedCurrent:raw};
+ });
+ assert.match(result.saveError,/oförändrad/);assert.equal(result.verified.verified,true);assert.equal(result.original,result.expectedOriginal);assert.equal(result.current,result.expectedCurrent);
+});
+
+test('transition rejects malformed sources before creating a backup or primary',async t=>{
+ const result=await transitionCase(t,async fixture=>{
+  const raw='{synthetic broken',p=LEXLMigrationPrototype.create({dbName:'lexl-prototype-invalid',readLegacy:()=>raw});let error='';try{await p.prepare()}catch(e){error=e.message}const status=await p.inspect();p.close();return {error,status,raw};
+ });
+ assert.ok(result.error);assert.equal(result.status.copiedButInactive,false);assert.equal(result.status.pendingProposalId,null);assert.equal(result.raw,'{synthetic broken');
+});
+
+test('two transition approvals on the same destination reserve exactly one copy and activation',async t=>{
+ const result=await transitionCase(t,async fixture=>{
+  const raw=JSON.stringify(fixture),options={dbName:'lexl-prototype-two-approvals',readLegacy:()=>raw},a=LEXLMigrationPrototype.create(options),b=LEXLMigrationPrototype.create(options);
+  const [sa,sb]=await Promise.all([a.prepare(),b.prepare()]);
+  const results=await Promise.allSettled([a.confirm(sa.id,{approved:true,backupSha256:sa.backupSha256}),b.confirm(sb.id,{approved:true,backupSha256:sb.backupSha256})]);
+  const current=await a.inspect(),accepted=results.filter(r=>r.status==='fulfilled');a.close();b.close();return {accepted:accepted.length,rejected:results.filter(r=>r.status==='rejected').length,revision:current.revision,winner:current.marker.proposalId,expected:accepted[0]?.value.marker.proposalId};
+ });
+ assert.equal(result.accepted,1);assert.equal(result.rejected,1);assert.equal(result.revision,1);assert.equal(result.winner,result.expected);
+});
+
+test('altered inactive transition copy is not overwritten or activated on retry',async t=>{
+ const result=await transitionCase(t,async fixture=>{
+  const raw=JSON.stringify(fixture),dbName='lexl-prototype-altered-copy',p=LEXLMigrationPrototype.create({dbName,readLegacy:()=>raw}),s=await p.prepare(),add=IDBObjectStore.prototype.add;
+  IDBObjectStore.prototype.add=function(v,k){if(k==='activation')throw Error('Synthetic interrupted activation');return add.call(this,v,k)};
+  try{await p.confirm(s.id,{approved:true,backupSha256:s.backupSha256})}catch{}finally{IDBObjectStore.prototype.add=add}
+  await new Promise((resolve,reject)=>{const r=indexedDB.open(dbName,1);r.onsuccess=()=>{const db=r.result,tx=db.transaction('records','readwrite'),records=tx.objectStore('records'),get=records.get('current');get.onsuccess=()=>{const value=get.result,data=JSON.parse(value.raw);data.history=[];records.put({...value,raw:JSON.stringify(data)},'current')};tx.oncomplete=()=>{db.close();resolve()};tx.onabort=()=>reject(tx.error)};r.onerror=()=>reject(r.error)});
+  let error='';try{await p.confirm(s.id,{approved:true,backupSha256:s.backupSha256})}catch(e){error=e.message}const status=await p.inspect();p.close();return {error,status,raw};
+ });
+ assert.match(result.error,/annat primärt|annan kopia/);assert.equal(result.status.primary,'legacy-readonly');assert.equal(result.status.copiedButInactive,true);assert.equal(result.raw,JSON.stringify(f()));
+});
+
+test('rollback export can be downloaded, read back and verified; missing files are rejected',async t=>{
+ const {page,errors}=await isolated(t,{raw:null});await page.addScriptTag({url:url+'/prototypes/one-time-transition.js'});
+ const bundle=await page.evaluate(async fixture=>{const raw=JSON.stringify(fixture),p=LEXLMigrationPrototype.create({dbName:'lexl-prototype-file-download',readLegacy:()=>raw}),s=await p.prepare();await p.confirm(s.id,{approved:true,backupSha256:s.backupSha256});const bundle=await p.exportBeforeRollback();p.close();return bundle},f());
+ const download=page.waitForEvent('download');
+ await page.evaluate(text=>{const url=URL.createObjectURL(new Blob([text],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='indexeddb-01115.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)},bundle.files['indexeddb-01115.json']);
+ const file=await download,downloaded=await fs.readFile(await file.path(),'utf8');assert.equal(downloaded,bundle.files['indexeddb-01115.json']);
+ const result=await page.evaluate(async bundle=>{const verified=await LEXLMigrationPrototype.verifyBundle(bundle);delete bundle.files['indexeddb-01115.json'];let error='';try{await LEXLMigrationPrototype.verifyBundle(bundle)}catch(e){error=e.message}return {verified,error}}, {...bundle,files:{...bundle.files,'indexeddb-01115.json':downloaded}});
+ assert.equal(result.verified.verified,true);assert.match(result.error,/fillista|saknas/);assert.deepEqual(errors,[]);
+});
+
+test('transition startup rejects damaged consent proof after later saves without changing either data source',async t=>{
+ const result=await transitionCase(t,async fixture=>{
+  const raw=JSON.stringify(fixture),dbName='lexl-prototype-consent-proof',options={dbName,readLegacy:()=>raw},p=LEXLMigrationPrototype.create(options),s=await p.prepare();await p.confirm(s.id,{approved:true,backupSha256:s.backupSha256});await p.save(next=>{next.syntheticLaterChange=true});const before=(await p.inspect()).stateRaw;p.close();
+  await new Promise((resolve,reject)=>{const r=indexedDB.open(dbName,1);r.onsuccess=()=>{const db=r.result,tx=db.transaction('records','readwrite'),records=tx.objectStore('records'),get=records.get('proposal:'+s.id);get.onsuccess=()=>records.put({...get.result,copyRaw:'tampered'},'proposal:'+s.id);tx.oncomplete=()=>{db.close();resolve()};tx.onabort=()=>reject(tx.error)};r.onerror=()=>reject(r.error)});
+  const reopened=LEXLMigrationPrototype.create(options);let error='';try{await reopened.inspect()}catch(e){error=e.message}reopened.close();
+  const after=await new Promise((resolve,reject)=>{const r=indexedDB.open(dbName,1);r.onsuccess=()=>{const db=r.result,tx=db.transaction('records','readonly'),get=tx.objectStore('records').get('current');get.onsuccess=()=>{};tx.oncomplete=()=>{db.close();resolve(get.result.raw)};tx.onabort=()=>reject(tx.error)};r.onerror=()=>reject(r.error)});
+  return {error,unchanged:before===after,legacyUnchanged:raw===JSON.stringify(fixture)};
+ });
+ assert.match(result.error,/underlaget kunde inte verifieras/);assert.equal(result.unchanged,true);assert.equal(result.legacyUnchanged,true);
+});
