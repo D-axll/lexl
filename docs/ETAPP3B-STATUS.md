@@ -21,3 +21,9 @@ Modulen är **inte kopplad till `index.html`**, `sw.js` eller `storage-session.j
 - Etapp 2B:s äldre IndexedDB-kopia visade en missvisande generell text om senare data. 3B-granskningen använder en neutral varning tills faktisk proveniens och jämförelse kan göras.
 - Tidigare manuella 2B-data visade möjlig skillnad mellan sjätte passets innehåll och `snapshot.record`. Detta är en testanmärkning, inte en verifierad produktionsbugg.
 - Inget påstående om godkänd återställning eller full integration görs innan gränssnitt, aktivering och omstart faktiskt testats.
+
+## Nytt steg: isolerad staging (2026-11-15)
+
+`recovery-staging.js` har lagts till. Efter godkänd filgranskning kan en kandidat skrivas till en **ny, separat** IndexedDB-databas med slumpmässigt UUID-namn. Staging gör SHA-256-kontroll före skrivning, använder `add` (ingen överskrivning), strikt transaktion och läser tillbaka/verifierar efter commit. `inspectStaged` verifierar kvittot vid en ny läsning.
+
+**Avgränsning:** Ingen koppling till UI eller `storage-session.js`, ingen aktivering, ingen skrivning till `lexl-training-schema1` eller localStorage. Ingen testpublicering eller manuellt testresultat ännu. Det återstår att utforma säker aktivering och granska befintlig aktiv data, flerfönstersituationer, felhantering och möjligheter att rensa övergivna staging-databaser. Ett staging-kvitto är inte en behörighet att skriva över aktiva data.
