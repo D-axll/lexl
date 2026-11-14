@@ -7,13 +7,15 @@
  const D=root.LEXLData;
  const fail=message=>{throw Error(message)};
  const sha=async raw=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw))),b=>b.toString(16).padStart(2,'0')).join('');
- async function activate({session,inspection,stagingTicket,preflight,safetyBackupFile,safetyBackupExpected,confirmation}={}){
+ async function activate({session,inspection,stagingTicket,preflight,safetyBackupFile,safetyBackupExpected,confirmation,assertNoUnsavedWork}={}){
   if(!session||!inspection||!stagingTicket||!preflight||!safetyBackupFile||!safetyBackupExpected)fail('Fullständig återställningsgranskning och säkerhetskopia krävs.');
+  if(typeof assertNoUnsavedWork!=='function')fail('Appen måste kontrollera osparat arbete före återställning.');
   if(confirmation!=='ÅTERSTÄLL MIN TRÄNING')fail('Uttryckligt återställningsgodkännande saknas.');
   await session.ready;
   if(session.blocked||session.source!=='indexeddb')fail('Endast verifierad IndexedDB-lagring kan återställas.');
   if(preflight.source!=='indexeddb'||preflight.activeSha256!==safetyBackupExpected.activeSha256||preflight.activeRevision!==safetyBackupExpected.activeRevision)fail('Godkännandet avser inte aktuellt tillstånd.');
   if(preflight.activeDraftWouldChange)fail('Pågående träningsutkast skulle ändras. Hantera utkastet innan återställning.');
+  if(await assertNoUnsavedWork()!==true)fail('Osparat arbete eller ett aktivt träningspass hindrar återställning.');
   if(preflight.lostSessions||preflight.changedSessions||preflight.lostPrograms||preflight.changedPrograms)fail('Kopian skulle ta bort eller ändra befintliga pass eller program. Detta måste hanteras separat; ingen tyst förlust tillåts.');
   const staged=await root.LEXLRecoveryStaging.inspectStaged(stagingTicket);
   if(!staged.verified||stagingTicket.sha256!==inspection.sha256||stagingTicket.revision!==inspection.revision)fail('Staging-kopian matchar inte filen.');
@@ -28,6 +30,8 @@
    if(latest[key])fail('Återställningen skulle ändra eller förlora befintliga data.');
   }
   const active=session.state;
+  if(active?.draft||D.importData(candidateRaw).draft)fail('Återställning med ett pågående utkast är blockerad tills det avslutats eller hanterats separat.');
+  if(await assertNoUnsavedWork()!==true)fail('Osparat arbete upptäcktes precis före skrivning.');
   if(!active||active.storageRevision!==latest.activeRevision)fail('Appens minne är inte synkroniserat med lagringen. Ladda om.');
   const next=D.copy(D.importData(candidateRaw));
   // The restored snapshot's historical revision must never be reused.
