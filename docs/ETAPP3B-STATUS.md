@@ -33,3 +33,9 @@ Modulen är **inte kopplad till `index.html`**, `sw.js` eller `storage-session.j
 `recovery-preflight.js` tillagd. Modulen verifierar staging-kvittot igen, läser den nuvarande aktiva datakällan och jämför program, pass, revision och utkast med säkerhetskopian. Den redovisar hur många pass/program som skulle försvinna och om revisionen är äldre. Resultatet anger uttryckligen `eligibleForAutomaticActivation:false` och skriver inga data.
 
 **Inte klart:** Jämförelsen är ännu inte kopplad till UI eller automatiskt testad. Förändrade pass jämförs för närvarande via JSON-serialisering, vilket kan markera samma innehåll med annan nyckelordning som ändrat. Kontroll av aktuellt återställningsutkast i separat recovery-nyckel, förändringar från andra flikar under granskningen, källans revisionskvitto och atomär aktivering måste hanteras innan aktivering får byggas in. Inga verkliga data får användas i detta skede.
+
+## Aktiveringsgranskning: säkerhetsgräns
+
+Granskning av `storage-transition.js` visar att `activation` är beviset för den **ursprungliga** övergången från localStorage till IndexedDB, inte ett generellt återställningskommando. `confirm()` får därför inte återanvändas för att ersätta redan aktiverade träningsdata. En separat återställningsprotokoll behövs med atomär kontroll mot aktuell `current`-revision, verifierad säkerhetskopia av det aktiva tillståndet, bevarade kvitton och skydd mot samtidiga fönster. Detta är ännu **inte implementerat**.
+
+`recovery-preflight.js` läser nu aktivt råtillstånd igen före svar och avbryter om det ändrats under granskningen. Den beräknar även SHA-256 för det observerade aktiva tillståndet. **Viktigt:** en andra läsning eller SHA-256 är ingen låsning; aktiveringsögonblicket måste fortfarande verifiera allt i samma IndexedDB-transaktion. Den äldre recovery-nyckeln och osparat arbete behöver också hanteras före aktivering.
