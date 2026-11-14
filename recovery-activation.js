@@ -7,9 +7,9 @@
  const D=root.LEXLData;
  const fail=message=>{throw Error(message)};
  const sha=async raw=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw))),b=>b.toString(16).padStart(2,'0')).join('');
- async function activate({session,inspection,stagingTicket,preflight,safetyBackupFile,safetyBackupExpected,confirmation,assertNoUnsavedWork}={}){
+ async function activate({session,inspection,stagingTicket,preflight,safetyBackupFile,safetyBackupExpected,confirmation,assertNoUnsavedWork,assertNoRecoveryDraft}={}){
   if(!session||!inspection||!stagingTicket||!preflight||!safetyBackupFile||!safetyBackupExpected)fail('Fullständig återställningsgranskning och säkerhetskopia krävs.');
-  if(typeof assertNoUnsavedWork!=='function')fail('Appen måste kontrollera osparat arbete före återställning.');
+  if(typeof assertNoUnsavedWork!=='function'||typeof assertNoRecoveryDraft!=='function')fail('Appen måste kontrollera osparat arbete och lokalt återställningsutkast.');
   if(confirmation!=='ÅTERSTÄLL MIN TRÄNING')fail('Uttryckligt återställningsgodkännande saknas.');
   await session.ready;
   if(session.blocked||session.source!=='indexeddb')fail('Endast verifierad IndexedDB-lagring kan återställas.');
@@ -29,10 +29,7 @@
   for(const key of ['lostSessions','changedSessions','lostPrograms','changedPrograms','activeDraftWouldChange']){
    if(latest[key])fail('Återställningen skulle ändra eller förlora befintliga data.');
   }
-  // No activation while localStorage still contains a recovery draft. The
-  // session's primary state alone does not represent unsaved recovery work.
-  if(typeof root.localStorage?.getItem!=='function')fail('Kan inte kontrollera webbläsarens återställningsutkast.');
-  if(root.localStorage.getItem('min-traning-recovery-v1')!==null)fail('Ett lokalt återställningsutkast finns kvar. Hantera det före återställning.');
+  if(await assertNoRecoveryDraft()!==true)fail('Ett lokalt återställningsutkast finns kvar. Hantera det före återställning.');
   const active=session.state;
   if(active?.draft||D.importData(candidateRaw).draft)fail('Återställning med ett pågående utkast är blockerad tills det avslutats eller hanterats separat.');
   if(await assertNoUnsavedWork()!==true)fail('Osparat arbete upptäcktes precis före skrivning.');
