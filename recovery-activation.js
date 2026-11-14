@@ -29,6 +29,10 @@
   for(const key of ['lostSessions','changedSessions','lostPrograms','changedPrograms','activeDraftWouldChange']){
    if(latest[key])fail('Återställningen skulle ändra eller förlora befintliga data.');
   }
+  // No activation while localStorage still contains a recovery draft. The
+  // session's primary state alone does not represent unsaved recovery work.
+  if(typeof root.localStorage?.getItem!=='function')fail('Kan inte kontrollera webbläsarens återställningsutkast.');
+  if(root.localStorage.getItem('min-traning-recovery-v1')!==null)fail('Ett lokalt återställningsutkast finns kvar. Hantera det före återställning.');
   const active=session.state;
   if(active?.draft||D.importData(candidateRaw).draft)fail('Återställning med ett pågående utkast är blockerad tills det avslutats eller hanterats separat.');
   if(await assertNoUnsavedWork()!==true)fail('Osparat arbete upptäcktes precis före skrivning.');
