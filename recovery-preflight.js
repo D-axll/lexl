@@ -5,6 +5,7 @@
  'use strict';
  const D=root.LEXLData;
  const fail=message=>{throw Error(message)};
+ const digest=async text=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text))),b=>b.toString(16).padStart(2,'0')).join('');
  const canonical=value=>JSON.stringify(normalize(value));
  function normalize(value){
   if(Array.isArray(value))return value.map(normalize);
@@ -38,12 +39,19 @@
   const active=activeRaw===null?D.prepare({programs:[],history:[],draft:null,calculationVersion:D.CALCULATION_VERSION}):D.importData(activeRaw);
   const candidate=D.importData(inspection.raw);
   const differences=compare(candidate,active);
+  // Detect changes while preflight is running. This is NOT an atomic activation lock.
+  const secondRaw=session.source==='indexeddb'?await session.readPrimaryRaw():session.legacyRaw;
+  if(secondRaw!==activeRaw)fail('Träningsdata ändrades under granskningen. Börja om utan att aktivera något.');
+  if(session.blocked)fail('Lagringen blockerades under granskningen.');
+  const activeSha256=await digest(activeRaw===null?'null':activeRaw);
   const revisionIsOlder=candidate.storageRevision<active.storageRevision;
   const revisionIsNewer=candidate.storageRevision>active.storageRevision;
   return Object.freeze({
    eligibleForAutomaticActivation:false,
    source:session.source,
    activeRevision:active.storageRevision,
+   activeSha256,
+   snapshotIsNotActivationLock:true,
    candidateRevision:candidate.storageRevision,
    revisionIsOlder,
    revisionIsNewer,
