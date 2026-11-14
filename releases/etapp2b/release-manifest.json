@@ -1,0 +1,216 @@
+{
+  "format": "lexl-static-test-release-v1",
+  "stage": "2B",
+  "name": "LEXL ÅTERSTÄLLNINGSTEST 2B – 0.11.15",
+  "version": "0.11.15",
+  "approvedBase": "2b9cbc12e217963635f761618fbb42255433d772",
+  "sourceCommit": "9834629b4a9ea2b8d3d211ac6fae0c1b4e0e591c",
+  "sourceDirty": false,
+  "origin": "https://lexl-01115-restore-2b.pages.dev",
+  "scope": "/lexl-restore-01115-2b/",
+  "namespace": "lexl-test-01115-2b-restore",
+  "originalSha256": "6a8bec11d51ffbde6908d90dbbb6a2e92f8f22195a56b77ce7cc8fa11b4a4058",
+  "syntheticOnly": true,
+  "externalImportEnabled": false,
+  "backups": [
+    {
+      "id": "native-json",
+      "file": "synthetic-native.json",
+      "kind": "native",
+      "createdAt": "2026-01-08T10:00:00Z",
+      "transport": "json",
+      "sha256": "21365e8e5155d9e91d8c8f83a45f1878989c5e62a7716160b147e92f13da27e3",
+      "stateSha256": "21365e8e5155d9e91d8c8f83a45f1878989c5e62a7716160b147e92f13da27e3"
+    },
+    {
+      "id": "legacy-json",
+      "file": "synthetic-original.json",
+      "kind": "legacy",
+      "createdAt": "2026-01-01T10:00:00Z",
+      "transport": "json",
+      "sha256": "6a8bec11d51ffbde6908d90dbbb6a2e92f8f22195a56b77ce7cc8fa11b4a4058",
+      "stateSha256": "931b2a83a58bef1225889da3c42db04d38103b56a3c59fef4a9b85dbd801862c"
+    },
+    {
+      "id": "older-json",
+      "file": "synthetic-older.json",
+      "kind": "native",
+      "createdAt": "2026-01-06T10:00:00Z",
+      "transport": "json",
+      "sha256": "799ea9e03c12c6b1be7984cee137e49faf68341af7d8b8d15b176e80647c9fe2",
+      "stateSha256": "799ea9e03c12c6b1be7984cee137e49faf68341af7d8b8d15b176e80647c9fe2"
+    },
+    {
+      "id": "native-zip",
+      "file": "synthetic-native.zip",
+      "kind": "native",
+      "createdAt": "2026-01-08T10:00:00Z",
+      "transport": "zip",
+      "sha256": "2ffe65ce84cfe57def1076e74b87c4332cf5c0a37a89502bbc5925bd1a86633f",
+      "stateSha256": "21365e8e5155d9e91d8c8f83a45f1878989c5e62a7716160b147e92f13da27e3"
+    },
+    {
+      "id": "bad-sha",
+      "file": "fault-sha.json",
+      "kind": "native",
+      "createdAt": "2026-01-08T10:00:00Z",
+      "transport": "json",
+      "sha256": "21365e8e5155d9e91d8c8f83a45f1878989c5e62a7716160b147e92f13da27e3",
+      "stateSha256": "21365e8e5155d9e91d8c8f83a45f1878989c5e62a7716160b147e92f13da27e3"
+    },
+    {
+      "id": "bad-json",
+      "file": "fault-json.json",
+      "kind": "native",
+      "createdAt": "2026-01-08T10:00:00Z",
+      "transport": "json",
+      "sha256": "cbdf3b1f91ae32fe1ea292ac6cccf19222f97929f531523f0d15d885052c00c4",
+      "stateSha256": "21365e8e5155d9e91d8c8f83a45f1878989c5e62a7716160b147e92f13da27e3"
+    },
+    {
+      "id": "missing-field",
+      "file": "fault-fields.json",
+      "kind": "native",
+      "createdAt": "2026-01-08T10:00:00Z",
+      "transport": "json",
+      "sha256": "0e9561cfb83d50990a103b3896fe249a11fe27fa28985448187f93ec12116d72",
+      "stateSha256": "21365e8e5155d9e91d8c8f83a45f1878989c5e62a7716160b147e92f13da27e3"
+    },
+    {
+      "id": "future-schema",
+      "file": "fault-schema.json",
+      "kind": "native",
+      "createdAt": "2026-01-08T10:00:00Z",
+      "transport": "json",
+      "sha256": "8592eb705a759ff6502919b186ae41e3ab40f96036a0f2fb59fb875ed6c4945a",
+      "stateSha256": "21365e8e5155d9e91d8c8f83a45f1878989c5e62a7716160b147e92f13da27e3"
+    },
+    {
+      "id": "incomplete-zip",
+      "file": "fault-incomplete.zip",
+      "kind": "native",
+      "createdAt": "2026-01-08T10:00:00Z",
+      "transport": "zip",
+      "sha256": "b56e6bfb9bf564b62181b3911bfcbecc3d13c368d7d7c64ca5b930c658cfa654",
+      "stateSha256": "21365e8e5155d9e91d8c8f83a45f1878989c5e62a7716160b147e92f13da27e3"
+    }
+  ],
+  "publishDirectory": "site",
+  "files": [
+    {
+      "path": "_headers",
+      "bytes": 416,
+      "sha256": "553c46e25b9bbabcba67a190699890861a91dfa456873d1d9ded0e56cfbd666a"
+    },
+    {
+      "path": "index.html",
+      "bytes": 239,
+      "sha256": "5fd2aa17c39277afc6a2d1ee8d98ac81ac9df882240d05f22fc108cda6420321"
+    },
+    {
+      "path": "lexl-restore-01115-2b/backup-package.js",
+      "bytes": 4613,
+      "sha256": "d78fcf577d6544abe5e87e38260b6ef9807885b14181fe062ac4ffc1940d84dd"
+    },
+    {
+      "path": "lexl-restore-01115-2b/build-info.json",
+      "bytes": 3670,
+      "sha256": "261879fddd9c86df37cf0997d43d34dddbbea10e323357573d2ab07aeb87f6dd"
+    },
+    {
+      "path": "lexl-restore-01115-2b/data-layer.js",
+      "bytes": 28056,
+      "sha256": "e8d9dbd71d05bc9686736f2c942894b7ddf0ac6dfb55d6c14ca5abfe5851b253"
+    },
+    {
+      "path": "lexl-restore-01115-2b/fault-fields.json",
+      "bytes": 19,
+      "sha256": "0e9561cfb83d50990a103b3896fe249a11fe27fa28985448187f93ec12116d72"
+    },
+    {
+      "path": "lexl-restore-01115-2b/fault-incomplete.zip",
+      "bytes": 40012,
+      "sha256": "b56e6bfb9bf564b62181b3911bfcbecc3d13c368d7d7c64ca5b930c658cfa654"
+    },
+    {
+      "path": "lexl-restore-01115-2b/fault-json.json",
+      "bytes": 10,
+      "sha256": "cbdf3b1f91ae32fe1ea292ac6cccf19222f97929f531523f0d15d885052c00c4"
+    },
+    {
+      "path": "lexl-restore-01115-2b/fault-schema.json",
+      "bytes": 26076,
+      "sha256": "8592eb705a759ff6502919b186ae41e3ab40f96036a0f2fb59fb875ed6c4945a"
+    },
+    {
+      "path": "lexl-restore-01115-2b/fault-sha.json",
+      "bytes": 26075,
+      "sha256": "d8d8f3ed5c8bbd2934dd8bb839788ce47066b77ca608ba90d08163ae823543cb"
+    },
+    {
+      "path": "lexl-restore-01115-2b/icon-192.png",
+      "bytes": 764,
+      "sha256": "ce7c0face1333fd276324f7a93eb12ff768887b09e007ac78c74ff95d87e1f6b"
+    },
+    {
+      "path": "lexl-restore-01115-2b/icon-512.png",
+      "bytes": 5004,
+      "sha256": "388d1b0bf07b918d528e1f4bada2db914305034111abfeef5cce3dcee6444056"
+    },
+    {
+      "path": "lexl-restore-01115-2b/icon.svg",
+      "bytes": 343,
+      "sha256": "10f6b53219193f879f091823b7171a121362be769aaa43fc7708b081e999393f"
+    },
+    {
+      "path": "lexl-restore-01115-2b/index.html",
+      "bytes": 10329,
+      "sha256": "c308e7e7744fbff89b36c7d5573f02133a9ebc3547b50b29112833280914c468"
+    },
+    {
+      "path": "lexl-restore-01115-2b/manifest.webmanifest",
+      "bytes": 583,
+      "sha256": "f51808bda2b2bc86f73f161b150e8977c1bbf2000bd9ffdcaca8305cea83717e"
+    },
+    {
+      "path": "lexl-restore-01115-2b/restore-engine.js",
+      "bytes": 10632,
+      "sha256": "8dafaca6fbdff854bd8d52394c994543c082dd51f5b013e0bd90af0310990a11"
+    },
+    {
+      "path": "lexl-restore-01115-2b/restore-ui.js",
+      "bytes": 5090,
+      "sha256": "43707704dabcaf939cc1310b9115d7142f3888ce419c4f71a668df1df286283b"
+    },
+    {
+      "path": "lexl-restore-01115-2b/storage-transition.js",
+      "bytes": 22161,
+      "sha256": "9013ccd2d283bb45d6d5afa59c29fa3967f81f0054c68e6c171ee5ed3d3c891c"
+    },
+    {
+      "path": "lexl-restore-01115-2b/sw.js",
+      "bytes": 1191,
+      "sha256": "5be310aae7d081032861310a9e271276532a8202884fd25b25f71771da2d6f40"
+    },
+    {
+      "path": "lexl-restore-01115-2b/synthetic-native.json",
+      "bytes": 26074,
+      "sha256": "21365e8e5155d9e91d8c8f83a45f1878989c5e62a7716160b147e92f13da27e3"
+    },
+    {
+      "path": "lexl-restore-01115-2b/synthetic-native.zip",
+      "bytes": 40034,
+      "sha256": "2ffe65ce84cfe57def1076e74b87c4332cf5c0a37a89502bbc5925bd1a86633f"
+    },
+    {
+      "path": "lexl-restore-01115-2b/synthetic-older.json",
+      "bytes": 22152,
+      "sha256": "799ea9e03c12c6b1be7984cee137e49faf68341af7d8b8d15b176e80647c9fe2"
+    },
+    {
+      "path": "lexl-restore-01115-2b/synthetic-original.json",
+      "bytes": 8744,
+      "sha256": "6a8bec11d51ffbde6908d90dbbb6a2e92f8f22195a56b77ce7cc8fa11b4a4058"
+    }
+  ]
+}
