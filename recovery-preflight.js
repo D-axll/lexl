@@ -5,15 +5,25 @@
  'use strict';
  const D=root.LEXLData;
  const fail=message=>{throw Error(message)};
+ const canonical=value=>JSON.stringify(normalize(value));
+ function normalize(value){
+  if(Array.isArray(value))return value.map(normalize);
+  if(value&&typeof value==='object')return Object.fromEntries(Object.keys(value).sort().map(key=>[key,normalize(value[key])]));
+  return value;
+ }
  function compare(candidate,active){
   const oldSessions=new Map(active.history.map(s=>[s.sessionId,s]));
   const newSessions=new Map(candidate.history.map(s=>[s.sessionId,s]));
+  const oldPrograms=new Map(active.programs.map(p=>[p.id,p]));
+  const newPrograms=new Map(candidate.programs.map(p=>[p.id,p]));
   return {
    lostSessions:active.history.filter(s=>!newSessions.has(s.sessionId)).length,
    addedSessions:candidate.history.filter(s=>!oldSessions.has(s.sessionId)).length,
-   changedSessions:candidate.history.filter(s=>oldSessions.has(s.sessionId)&&JSON.stringify(oldSessions.get(s.sessionId))!==JSON.stringify(s)).length,
-   lostPrograms:active.programs.filter(p=>!candidate.programs.some(q=>q.id===p.id)).length,
-   activeDraftWouldChange:JSON.stringify(active.draft??null)!==JSON.stringify(candidate.draft??null)
+   changedSessions:candidate.history.filter(s=>oldSessions.has(s.sessionId)&&canonical(oldSessions.get(s.sessionId))!==canonical(s)).length,
+   lostPrograms:active.programs.filter(p=>!newPrograms.has(p.id)).length,
+   addedPrograms:candidate.programs.filter(p=>!oldPrograms.has(p.id)).length,
+   changedPrograms:candidate.programs.filter(p=>oldPrograms.has(p.id)&&canonical(oldPrograms.get(p.id))!==canonical(p)).length,
+   activeDraftWouldChange:canonical(active.draft??null)!==canonical(candidate.draft??null)
   };
  }
  async function review({inspection,session,stagingTicket}={}){
@@ -29,18 +39,21 @@
   const candidate=D.importData(inspection.raw);
   const differences=compare(candidate,active);
   const revisionIsOlder=candidate.storageRevision<active.storageRevision;
+  const revisionIsNewer=candidate.storageRevision>active.storageRevision;
   return Object.freeze({
    eligibleForAutomaticActivation:false,
    source:session.source,
    activeRevision:active.storageRevision,
    candidateRevision:candidate.storageRevision,
    revisionIsOlder,
+   revisionIsNewer,
+   revisionCannotProveFreshness:true,
    activePrograms:active.programs.length,
    activeSessions:active.history.length,
    candidatePrograms:candidate.programs.length,
    candidateSessions:candidate.history.length,
    ...differences,
-   warning:'Endast förhandsgranskning. Ingen data har aktiverats eller ersatts. Behåll alltid en verifierad säkerhetskopia av aktuell data.'
+   warning:'Endast förhandsgranskning. Revisionen bevisar inte att kopian innehåller alla träningspass. Ingen data har aktiverats eller ersatts. Behåll alltid en verifierad säkerhetskopia av aktuell data.'
   });
  }
  root.LEXLRecoveryPreflight=Object.freeze({review});
