@@ -27,3 +27,9 @@ Modulen är **inte kopplad till `index.html`**, `sw.js` eller `storage-session.j
 `recovery-staging.js` har lagts till. Efter godkänd filgranskning kan en kandidat skrivas till en **ny, separat** IndexedDB-databas med slumpmässigt UUID-namn. Staging gör SHA-256-kontroll före skrivning, använder `add` (ingen överskrivning), strikt transaktion och läser tillbaka/verifierar efter commit. `inspectStaged` verifierar kvittot vid en ny läsning.
 
 **Avgränsning:** Ingen koppling till UI eller `storage-session.js`, ingen aktivering, ingen skrivning till `lexl-training-schema1` eller localStorage. Ingen testpublicering eller manuellt testresultat ännu. Det återstår att utforma säker aktivering och granska befintlig aktiv data, flerfönstersituationer, felhantering och möjligheter att rensa övergivna staging-databaser. Ett staging-kvitto är inte en behörighet att skriva över aktiva data.
+
+## Nytt steg: förhandsjämförelse utan aktivering
+
+`recovery-preflight.js` tillagd. Modulen verifierar staging-kvittot igen, läser den nuvarande aktiva datakällan och jämför program, pass, revision och utkast med säkerhetskopian. Den redovisar hur många pass/program som skulle försvinna och om revisionen är äldre. Resultatet anger uttryckligen `eligibleForAutomaticActivation:false` och skriver inga data.
+
+**Inte klart:** Jämförelsen är ännu inte kopplad till UI eller automatiskt testad. Förändrade pass jämförs för närvarande via JSON-serialisering, vilket kan markera samma innehåll med annan nyckelordning som ändrat. Kontroll av aktuellt återställningsutkast i separat recovery-nyckel, förändringar från andra flikar under granskningen, källans revisionskvitto och atomär aktivering måste hanteras innan aktivering får byggas in. Inga verkliga data får användas i detta skede.
