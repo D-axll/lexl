@@ -39,3 +39,9 @@ Modulen är **inte kopplad till `index.html`**, `sw.js` eller `storage-session.j
 Granskning av `storage-transition.js` visar att `activation` är beviset för den **ursprungliga** övergången från localStorage till IndexedDB, inte ett generellt återställningskommando. `confirm()` får därför inte återanvändas för att ersätta redan aktiverade träningsdata. En separat återställningsprotokoll behövs med atomär kontroll mot aktuell `current`-revision, verifierad säkerhetskopia av det aktiva tillståndet, bevarade kvitton och skydd mot samtidiga fönster. Detta är ännu **inte implementerat**.
 
 `recovery-preflight.js` läser nu aktivt råtillstånd igen före svar och avbryter om det ändrats under granskningen. Den beräknar även SHA-256 för det observerade aktiva tillståndet. **Viktigt:** en andra läsning eller SHA-256 är ingen låsning; aktiveringsögonblicket måste fortfarande verifiera allt i samma IndexedDB-transaktion. Den äldre recovery-nyckeln och osparat arbete behöver också hanteras före aktivering.
+
+## Säkerhetskopia före återställning (2026-11-15)
+
+`recovery-safety-backup.js` är en fristående skrivskyddad modul. `prepare({session})` läser och validerar aktivt IndexedDB-tillstånd, kontrollerar att det inte ändrats under exporten och returnerar JSON-bytes, föreslaget filnamn och SHA-256. Appens UI måste senare låta användaren **spara filen själv**. `verifyReselected({file,expected,session})` kräver att användaren väljer tillbaka filen och verifierar dess innehåll, hash och att det aktiva tillståndet fortfarande är samma. Resultatet ger aldrig tillstånd att aktivera återställningen.
+
+**Ej klart/testat:** UI för nedladdning och återval, robust återställningsgodkännande, atomär aktivering, hantering av osparat arbete och samtidig flik. Ett verifierat filåterval bevisar att filen kan läsas vid kontrolltillfället, inte permanent extern arkivering. Inga manuella tester genomförda.
