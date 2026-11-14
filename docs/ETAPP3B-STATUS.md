@@ -51,3 +51,9 @@ Granskning av `storage-transition.js` visar att `activation` är beviset för de
 `recovery-activation.js` innehåller nu en **fristående, ännu inte UI-ansluten** `activate()`. Den kräver uttrycklig fras, verifierad staging, omvald/verifierad extern backup, oförändrat aktivt SHA-256 och ny preflight. Första versionen **vägrar** återställning om något befintligt pass eller program försvinner/ändras eller om aktivt utkast ändras. Kandidatens historiska revisionsnummer ersätts med aktuell revision innan `session.commit()` anropas. Skrivningen går alltså via befintlig `storage-session → storage-transition → data-layer`, där CAS, previous-backup och kvitto redan ligger i en atomär IndexedDB-transaktion. Ingen direkt skrivning till IndexedDB sker i den nya modulen.
 
 **Viktigt:** Detta är en implementation på utvecklingsgren, **inte en verifierad säker funktion**. Särskilt återstår test av multi-tab-kollision, crash/abort, stora datamängder, kvitto och efterverifiering, kvarvarande recovery-localStorage, samt att UI säkert kan stoppa pågående pass och kräva omladdning. Koppla INTE in i produktion eller beta före granskning och tester. Denna försiktiga variant kan inte återställa en äldre kopia som skulle ta bort senare pass.
+
+## Extra säkerhetsspärr för osparat arbete
+
+Aktiveringsmodulen kräver nu callbacken `assertNoUnsavedWork`, som måste returnera exakt `true` både före och precis före skrivning. Den vägrar också aktivering när aktivt tillstånd eller kandidat innehåller ett `draft`, även om utkasten är lika. Det är avsiktligt strikt tills appens hantering av pågående pass och recovery-localStorage har granskats. Utan en UI-integration som kan bevisa att ingen användarändring är osparad är återställning alltså **blockerad**.
+
+**Fortfarande ej verifierat:** Callbacken är ett appkontrakt, inte ett transaktionslås. Multi-tab och CAS-skrivningen måste manuellt feltestas; kodens existens innebär inte att återställning är säker för användning.
