@@ -33,9 +33,15 @@
   }else{
    if(bytes.byteLength>20*1024*1024)fail('JSON-filen är för stor.');
    raw=utf8.decode(bytes);
+   const envelope=D.parse(raw);
+   if(envelope?.format==='lexl-before-restore-v1'){
+    if(typeof envelope.raw!=='string'||await digest(envelope.raw)!==envelope.activeSha256||D.importData(envelope.raw).storageRevision!==envelope.activeRevision)fail('Återställningsbackupens kontrollsumma stämmer inte.');
+    raw=envelope.raw;
+   }
    kind='json';
    warning='En äldre kopia kan sakna senare träningspass och utkast. Kontrollera datum och innehåll före godkännande.';
   }
+  if(root.LEXLRecoveryFilePolicy&&await root.LEXLRecoveryFilePolicy(raw)!==true)fail('Denna beta tillåter endast medföljande syntetiska testfiler.');
   const summary=inspectState(raw);
   return Object.freeze({kind,sha256:await digest(raw),revision:summary.revision,programs:summary.programs,sessions:summary.sessions,draft:summary.draft,warning,manifestRevision:manifest?.revision??null,raw});
  }

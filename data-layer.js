@@ -295,7 +295,7 @@
       } catch (error) { blocked = error; }
       initialized = true;
     })();
-    async function commit(candidate, { intent = 'change' } = {}) {
+    async function commit(candidate, { intent = 'change', restore = null } = {}) {
       // Freeze the proposed change before yielding; caller mutations cannot affect it.
       const next = prepare(candidate);
       await ready;
@@ -304,6 +304,7 @@
       if (next.storageRevision !== state.storageRevision) fail('Ändringen bygger på ett äldre tillstånd. Ladda om innan du fortsätter.');
       if (storage.getItem(legacyKey) !== legacyRaw) throw conflict();
       const expectedRaw = nativeRaw, expectedRevision = nativeRevision, previousRaw = raw;
+      if (restore && (restore.format !== 'lexl-restore-commit-v1' || restore.expectedRaw !== expectedRaw || restore.expectedRevision !== expectedRevision || !/^[a-f0-9]{64}$/.test(restore.candidateSha256) || !/^[a-f0-9]{64}$/.test(restore.backupSha256))) fail('Återställningsgodkännandet är inaktuellt.');
       next.storageRevision = expectedRevision + 1;
       if (!Number.isSafeInteger(next.storageRevision)) fail('Revisionsnumret kan inte ökas säkert.');
       const text = JSON.stringify(next);
@@ -340,6 +341,15 @@
               if (actual !== undefined && actual.legacyRaw !== legacyRaw) throw conflict();
               if (actual === undefined ? expectedRaw !== null : actual.revision !== expectedRevision || actual.raw !== expectedRaw) throw conflict();
               if (storage.getItem(legacyKey) !== legacyRaw) throw conflict();
+              if (restore) {
+                // All proof identities are checked in this same readwrite transaction.
+                for (const [key, expected] of Object.entries(restore.proof)) {
+                  const proof = records.get(key);
+                  proof.onsuccess = () => { try { if (JSON.stringify(proof.result) !== expected) throw conflict(); } catch (error) { abort(error); } };
+                }
+                if (restore.assertSafe() !== true) fail('Pågående eller osparat arbete hindrar återställning.');
+                records.add({format:'lexl-restore-journal-v1', revision:next.storageRevision, previousRevision:expectedRevision, candidateSha256:restore.candidateSha256, backupSha256:restore.backupSha256, token, digest}, 'restore:'+next.storageRevision);
+              }
               const original = records.get('original');
               original.onsuccess = () => {
                 try {
@@ -347,7 +357,7 @@
                   if (original.result === undefined) { records.put(backup, 'original'); records.put(backupReceipt, 'backup-receipt:original'); }
                   records.put(backup, 'previous'); records.put(backupReceipt, 'backup-receipt:previous');
                   records.put(proposed, 'current');
-                  records.put({ revision: next.storageRevision, token, digest }, receiptKey);
+                  records.put({ revision: next.storageRevision, token, digest, ...(restore?{restoreJournal:'restore:'+next.storageRevision}:{}) }, receiptKey);
                   if (next.storageRevision > 32) records.delete('receipt:' + (next.storageRevision - 32));
                   // Read back exact data and backups in this same atomic transaction.
                   const check = records.get('current');

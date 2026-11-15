@@ -16,7 +16,7 @@
   if(preflight.source!=='indexeddb'||preflight.activeSha256!==safetyBackupExpected.activeSha256||preflight.activeRevision!==safetyBackupExpected.activeRevision)fail('Godkännandet avser inte aktuellt tillstånd.');
   if(preflight.activeDraftWouldChange)fail('Pågående träningsutkast skulle ändras. Hantera utkastet innan återställning.');
   if(await assertNoUnsavedWork()!==true)fail('Osparat arbete eller ett aktivt träningspass hindrar återställning.');
-  if(preflight.lostSessions||preflight.changedSessions||preflight.lostPrograms||preflight.changedPrograms)fail('Kopian skulle ta bort eller ändra befintliga pass eller program. Detta måste hanteras separat; ingen tyst förlust tillåts.');
+  if(preflight.lostSessions||preflight.changedSessions||preflight.lostPrograms||preflight.changedPrograms||preflight.changedMetadata)fail('Kopian skulle ta bort eller ändra befintliga pass eller program. Detta måste hanteras separat; ingen tyst förlust tillåts.');
   const staged=await root.LEXLRecoveryStaging.inspectStaged(stagingTicket);
   if(!staged.verified||stagingTicket.sha256!==inspection.sha256||stagingTicket.revision!==inspection.revision)fail('Staging-kopian matchar inte filen.');
   const candidateRaw=inspection.raw;
@@ -26,7 +26,7 @@
   // Re-run comparison immediately before committing; preflight is not a lock.
   const latest=await root.LEXLRecoveryPreflight.review({inspection,session,stagingTicket});
   if(latest.activeSha256!==preflight.activeSha256||latest.activeRevision!==preflight.activeRevision)fail('Aktiva data ändrades efter godkännandet.');
-  for(const key of ['lostSessions','changedSessions','lostPrograms','changedPrograms','activeDraftWouldChange']){
+  for(const key of ['lostSessions','changedSessions','lostPrograms','changedPrograms','activeDraftWouldChange','changedMetadata']){
    if(latest[key])fail('Återställningen skulle ändra eller förlora befintliga data.');
   }
   if(await assertNoRecoveryDraft()!==true)fail('Ett lokalt återställningsutkast finns kvar. Hantera det före återställning.');
@@ -40,9 +40,15 @@
   // Existing session.commit uses an atomic compare-and-swap against current and
   // writes previous backup + receipt in the SAME IndexedDB transaction.
   // If another tab commits first, the writer aborts without overwriting it.
-  const result=await session.commit(next,{intent:'change'});
-  const persisted=await session.readPrimaryRaw();
-  if(typeof persisted!=='string'||await sha(persisted)!==await sha(JSON.stringify(result)))fail('Skrivningen kunde inte verifieras. Ladda om och granska data innan du fortsätter.');
+  const expectedRaw=await session.readPrimaryRaw();
+  if(await sha(expectedRaw)!==latest.activeSha256)fail('Aktiva data ändrades före transaktionen.');
+  const assertSafe=()=>assertNoUnsavedWork()===true&&assertNoRecoveryDraft()===true;
+  const result=await session.commit(next,{intent:'change',restore:{format:'lexl-restore-commit-v1',expectedRaw,expectedRevision:latest.activeRevision,candidateSha256:inspection.sha256,backupSha256:safety.activeSha256,assertSafe}});
+  try{
+   const persisted=await session.readPrimaryRaw();
+   if(typeof persisted!=='string'||await sha(persisted)!==await sha(JSON.stringify(result)))fail('Skrivningen kunde inte verifieras.');
+  }catch(e){session.block('Återställningen kan vara sparad. Ladda om och granska data.');throw Error('Efterkontrollen misslyckades. Ingen automatisk återgång utförs. '+e.message)}
+  session.block('Återställningen är sparad. Ladda om för att verifiera innan fortsatt användning.');
   return Object.freeze({committed:true,revision:result.storageRevision,sessions:result.history.length,programs:result.programs.length,requiresReload:true});
  }
  root.LEXLRecoveryActivation=Object.freeze({activate});

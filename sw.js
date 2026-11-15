@@ -1,8 +1,8 @@
 // Cache ownership follows the complete registration scope, not a shared product prefix.
 const PREFIX = 'lexl-scope:' + encodeURIComponent(self.registration.scope) + ':';
-const CACHE = PREFIX + '01115-stage1b-v1';
+const CACHE = PREFIX + '01115-stage3b-v1';
 const ASSETS = ['./', './index.html', './data-layer.js', './storage-transition.js',
-  './storage-session.js', './backup-package.js', './program-1.webp', './program-2.webp',
+  './storage-session.js', './backup-package.js', './recovery-inspection.js','./recovery-staging.js','./recovery-preflight.js','./recovery-safety-backup.js','./recovery-activation.js','./recovery-ui.js', './program-1.webp', './program-2.webp',
   './program-3.webp', './manifest.webmanifest', './icon-192.png', './icon-512.png',
   './logo-dark.png', './logo-light.png'];
 self.addEventListener('install', event => {

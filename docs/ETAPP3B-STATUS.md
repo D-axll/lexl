@@ -1,3 +1,5 @@
+> Aktuell status 2026-11-15: integration och isolerat syntetiskt 3B-paket är implementerade. 53 modell-/DOM-/byggtester har passerat. Riktiga webbläsartester blockerades av körmiljön; ingen publicering eller manuell testning har skett. Se [leveransrapport](ETAPP3B-LEVERANS.md) och [manuell testchecklista](ETAPP3B-MANUELL-TESTCHECKLISTA.md). Nedanstående steg är historik och beskriver också tidigare mellanlägen.
+
 # Etapp 3B – påbörjad integration (ej godkänd)
 
 Gren: `dev/0.11.15-etapp3b-integration`. Bas: Etapp 2B `60234e834ccefdd79760f45fd8162720f0461901`, som i sin tur innehåller Etapp 1B. `main` ändras inte.

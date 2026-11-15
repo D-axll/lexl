@@ -1,3 +1,5 @@
+> Uppdatering 2026-11-15: den försiktiga, bevarande återställningen är nu implementerad med befintlig CAS-transaktion, proof-kontroll och journal. 53 modell-/DOM-/byggtester har passerat; verklig Chromium-/Pixel-verifiering återstår. Se [leveransrapport](ETAPP3B-LEVERANS.md) för exakt implementerad omfattning och begränsningar. Nedanstående är det ursprungliga designunderlaget, inte aktuell leveransstatus.
+
 # LEXL 0.11.15 – Etapp 3B: krav för atomär återställning
 
 Status: **designgranskning, inte implementerad eller testad**. Ingen aktivering tillåten i appen ännu.

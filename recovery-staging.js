@@ -8,16 +8,16 @@
  const hash=async raw=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw))),b=>b.toString(16).padStart(2,'0')).join('');
  const prefix='lexl-restore-staging-01115-';
  const nameOK=name=>typeof name==='string'&&/^lexl-restore-staging-01115-[0-9a-f-]{36}$/.test(name);
- function open(name,factory){
+ function open(name,factory,create=false){
   return new Promise((resolve,reject)=>{
    let settled=false,request;
    const bad=e=>{if(!settled){settled=true;reject(e)}};
    try{
     request=factory.open(name,1);
-    request.onupgradeneeded=()=>request.result.createObjectStore('records');
+    request.onupgradeneeded=()=>{if(create)request.result.createObjectStore('records');else request.transaction.abort()};
     request.onerror=()=>bad(request.error||Error('Staging-databasen kunde inte öppnas.'));
     request.onblocked=()=>bad(Error('Staging-databasen är blockerad av ett annat fönster.'));
-    request.onsuccess=()=>{if(settled){request.result.close();return}settled=true;resolve(request.result)};
+    request.onsuccess=()=>{if(settled){request.result.close();return}settled=true;request.result.onversionchange=()=>request.result.close();resolve(request.result)};
    }catch(e){bad(e)}
   });
  }
@@ -53,7 +53,7 @@
   const name=prefix+root.crypto.randomUUID();
   let db;
   try{
-   db=await open(name,factory);
+   db=await open(name,factory,true);
    // A freshly named database must be empty; do not reuse any existing staging data.
    if((await read(db,'candidate'))!==undefined)fail('Staging-platsen innehåller redan data.');
    const record={format:'lexl-restore-stage-v1',raw:inspection.raw,sha256:digest,revision:state.storageRevision,kind:inspection.kind,createdAt:new Date().toISOString()};

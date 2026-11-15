@@ -1,0 +1,14 @@
+{
+  "name": "lexl-recovery-development",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/data-layer.test.cjs tests/recovery.test.cjs tests/recovery-ui.test.cjs tests/integration-build.test.cjs",
+    "test:browser": "node --test tests/browser.test.cjs",
+    "build:beta": "node scripts/build-integration.cjs"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "6.2.5",
+    "jsdom": "26.1.0",
+    "playwright": "1.62.1"
+  }
+}

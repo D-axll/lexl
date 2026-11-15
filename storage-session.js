@@ -54,7 +54,7 @@
    state=D.freeze(result.state);raw=result.stateRaw;source='indexeddb';pending=null;
    return state;
   }
-  async function commit(candidate,{intent='change'}={}){
+  async function commit(candidate,{intent='change',restore=null}={}){
    D.validate(candidate,false);const next=D.copy(candidate);await ensure();
    if(source==='legacy-readonly')throw Error('Äldre data är skrivskyddade tills du uttryckligen godkänner den verifierade engångsövergången.');
    if(source==='first-start'){
@@ -68,7 +68,7 @@
     }
    }
    try{
-    const accepted=await engine.commit(next);state=D.freeze(accepted);raw=JSON.stringify(accepted);return state;
+    const accepted=await engine.commit(next,{restore});state=D.freeze(accepted);raw=JSON.stringify(accepted);return state;
    }catch(e){if(e.message.includes('kan vara sparad'))blocked=e;throw e}
   }
   return {ready,commit,prepareTransition,approveTransition,
@@ -77,6 +77,7 @@
    verifyBundle:root.LEXLTransition.verifyBundle,
    readPrimaryRaw:()=>engine.readPrimaryRaw(),recoveryRaw:which=>engine.recoveryRaw(which),
    get state(){return state},get raw(){return raw},get legacyRaw(){return initialRaw},get blocked(){return blocked},get source(){return source},get initialized(){return initialized},get pending(){return pending},
+   block(message){blocked=Error(message)},
    close(){channel?.close();engine.close()}
   };
  }

@@ -24,7 +24,8 @@
    lostPrograms:active.programs.filter(p=>!newPrograms.has(p.id)).length,
    addedPrograms:candidate.programs.filter(p=>!oldPrograms.has(p.id)).length,
    changedPrograms:candidate.programs.filter(p=>oldPrograms.has(p.id)&&canonical(oldPrograms.get(p.id))!==canonical(p)).length,
-   activeDraftWouldChange:canonical(active.draft??null)!==canonical(candidate.draft??null)
+   activeDraftWouldChange:canonical(active.draft??null)!==canonical(candidate.draft??null),
+   changedMetadata:Object.keys(active).some(key=>!['programs','history','draft','storageRevision'].includes(key)&&canonical(active[key])!==canonical(candidate[key]))
   };
  }
  async function review({inspection,session,stagingTicket}={}){

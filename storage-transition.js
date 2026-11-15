@@ -55,7 +55,7 @@
    const connection = await open();
    return new Promise((resolve, reject) => {
     const tx = connection.transaction('records', 'readonly'), result = {};
-    for (const key of keys) { const r = tx.objectStore('records').get(key); r.onsuccess = () => { result[key] = r.result; if(key==='current'&&Number.isSafeInteger(r.result?.revision)){const receipt=tx.objectStore('records').get('receipt:'+r.result.revision);receipt.onsuccess=()=>{result.currentReceipt=receipt.result}} }; }
+    for (const key of keys) { const r = tx.objectStore('records').get(key); r.onsuccess = () => { result[key] = r.result; if(key==='current'&&Number.isSafeInteger(r.result?.revision)){const receipt=tx.objectStore('records').get('receipt:'+r.result.revision);receipt.onsuccess=()=>{result.currentReceipt=receipt.result;if(receipt.result?.restoreJournal){const journal=tx.objectStore('records').get(receipt.result.restoreJournal);journal.onsuccess=()=>{result.restoreJournal=journal.result}}}} }; }
     tx.oncomplete = () => resolve(result);
     tx.onabort = () => reject(tx.error || Error('Läsningen avbröts.'));
    });
@@ -178,17 +178,23 @@
     verifiedPlan = {identity:proofIdentity,value:verified};
    }
    const state = writer?.raw === current?.raw ? writer.state : D.importData(current?.raw);
+   if(snapshot.currentReceipt?.restoreJournal){const j=snapshot.restoreJournal,r=snapshot.currentReceipt;if(r.restoreJournal!=='restore:'+current.revision||j?.format!=='lexl-restore-journal-v1'||j.revision!==current.revision||j.previousRevision!==current.revision-1||j.digest!==r.digest||j.token!==r.token)fail('Återställningsjournalen kunde inte verifieras.');}
    if(snapshot.currentReceipt?.revision!==current.revision||typeof snapshot.currentReceipt.token!=='string'||snapshot.currentReceipt.digest!==await hash(current.raw))fail('Det sparade tillståndets SHA-256-kvitto kunde inte verifieras.');
    if (!equal(snapshot.activation, marker) || !p?.approved || marker.backupSha256 !== backup.sha256 || marker.copySha256 !== p.copySha256 || current.format !== 'lexl-idb-state-v1' || current.revision !== state.storageRevision || state.storageRevision < marker.revision || current.legacyRaw !== verified.input.legacyRaw) fail('Aktiveringen kunde inte verifieras.');
    if (current.revision === 1 && await hash(current.raw) !== marker.copySha256) fail('Den aktiverade kopian har ändrats.');
-   return { primary: 'indexeddb', revision: current.revision, state, legacyChanged: !equal(sources(), verified.input), marker, backup, stateRaw: current.raw, baseline: verified.state };
+   return { primary: 'indexeddb', revision: current.revision, state, legacyChanged: !equal(sources(), verified.input), marker, backup, stateRaw: current.raw, baseline: verified.state, restoreProof:Object.fromEntries(Object.entries(snapshot).filter(([key])=>key!=='current').map(([key,value])=>[key==='currentReceipt'?'receipt:'+current.revision:key==='restoreJournal'?'restore:'+current.revision:key,JSON.stringify(value)])) };
   }
-  async function commit(candidate) {
+  async function commit(candidate, {restore = null} = {}) {
    const active = await inspect();
    if (active.primary !== 'indexeddb' || active.legacyChanged) fail('Skrivning kräver verifierad aktivering och oförändrad legacy-källa.');
    const next = candidate;
    writer ??= D.createStore({ dbName, legacyKey: 'min-traning-v1', storage: { getItem: () => readLegacy() }, defaults, getIndexedDB });
-   await writer.ready; return writer.commit(next);
+   await writer.ready;
+   if(restore){
+    if(active.stateRaw!==restore.expectedRaw||active.revision!==restore.expectedRevision)fail('Aktiva data har ändrats efter granskningen.');
+    const appGuard=restore.assertSafe;restore={...restore,proof:active.restoreProof,assertSafe:()=>readRecovery()===null&&appGuard()===true};
+   }
+   return writer.commit(next,{restore});
   }
   async function exportBeforeRollback({unsavedRaw=null}={}) {
    const sourceBefore = sources(), active = await inspect();
