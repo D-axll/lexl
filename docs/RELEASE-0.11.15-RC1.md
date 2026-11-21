@@ -25,7 +25,7 @@ Status: **under arbete, ej godkänd för main**. Releasegren: `release/0.11.15-r
 - [ ] Uttryckligt användargodkännande innan någon merge/publicering till `main`.
 
 ## Nyupptäckta releasepunkter (2026-11-21)
-- [ ] HTML-titeln är fortfarande `LEXL – Träningslogg PWA 0.11.15 etapp 1 (utveckling)` trots RC1. GitHub-anslutningens `fetch_file` ger tomt innehåll för den stora `index.html` (Git-blobb `b519d9ec72aea36333db7cc75dc06922dd24cbf5`); ändra **inte** hela filen med en tom/trunkerad ersättning. Kräver säker fullständig filåtkomst före ändring.
+- [x] HTML-titeln uppdaterad till `LEXL – Träningslogg 0.11.15 RC1` genom att hämta hela Git-blobbens innehåll och ersätta exakt en titelsträng (commit `0079030922370808806832462752077bde0fa243`). Ny blobb `f41116ea41630914f9696d181cbd7ce900a6f95b` omläst och kontrollerad.
 - [x] `sw.js`: cacheidentifieraren uppdaterad från `01115-stage3b-v1` till `01115-rc1-v1` på RC-grenen (commit `246e50fa0173f81598aae12874f21c376a33677e`). Uppdateringsbeteendet på samma origin är **inte ännu verifierat**.
 - [x] `manifest.webmanifest`: versionsfält uppdaterat från `0.11.14` till `0.11.15` på RC-grenen (commit `aa6b34f80200e0692ca9b467deed157276c9fbb5`).
 - `recovery-inspection.js` begränsar JSON till 20 MiB och ZIP till 128 MiB; kontrollera felmeddelanden och att stora säkerhetskopior inte leder till databortfall.
@@ -34,7 +34,7 @@ Status: **under arbete, ej godkänd för main**. Releasegren: `release/0.11.15-r
 ## RC1 kontroll efter versionsjusteringar
 - [x] `sw.js` omläst efter ändring: `CACHE = PREFIX + '01115-rc1-v1'`; den befintliga scope-avgränsade cachehanteringen har lämnats intakt.
 - [ ] Kontrollera övergång med redan aktiv 0.11.14-service worker och bevarade användardata på samma origin (inte testat).
-- [ ] Kontrollera HTML-titeln när full fil kan hanteras utan risk för förlust av innehåll.
+- [x] HTML-titel kontrollerad från fullständig Git-blobb efter ändring. Alla tio externa lagrings-/återställningsskript kvar i ordinarie HTML.
 - [ ] PWA-installation, offlineuppdatering, tillgångar, säker lagring och regression är ännu inte slutgodkända.
 
 ## Uppgraderingsgranskning från 0.11.14 (2026-11-21)
@@ -44,7 +44,7 @@ Status: **under arbete, ej godkänd för main**. Releasegren: `release/0.11.15-r
 - [ ] Kör verklig uppgradering från befintlig 0.11.14-service worker på samma origin med syntetiska träningsdata: bekräfta oförändrade pass/program/historik och oförändrad äldre localStorage, godkänn övergång, ladda om och jämför poster.
 - [ ] Kontrollera två flikar, avböjt samtycke, avbruten kopiering, offlineuppdatering och återgångsexport på samma origin.
 - [ ] Granska säkerhetsgrinden i den färdiga RC:n på Pixel 8 före produktionsbeslut. Undvik att testa med verkliga användardata utan separat verifierad extern backup.
-- [ ] Stor `index.html` kan ännu inte hämtas fullständigt genom GitHub-anslutningens filverktyg; HTML-titel och fullständigt byggpaket kvarstår.
+- [x] Stor `index.html` hämtad fullständigt via Git-blobb och HTML-titel uppdaterad; [ ] fullständigt byggpaket och körd uppgraderingsregression kvarstår.
 
 ## Releaseprincip
 Ingen automatisk merge, ingen ändring av `main` och ingen publicering på produktionsorigin innan samtliga blockerande kontroller är verifierade.
