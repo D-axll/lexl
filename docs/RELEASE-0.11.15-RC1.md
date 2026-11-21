@@ -25,10 +25,17 @@ Status: **under arbete, ej godkänd för main**. Releasegren: `release/0.11.15-r
 - [ ] Uttryckligt användargodkännande innan någon merge/publicering till `main`.
 
 ## Nyupptäckta releasepunkter (2026-11-21)
-- HTML-titeln är fortfarande `LEXL – Träningslogg PWA 0.11.15 etapp 1 (utveckling)` trots RC1; uppdatera innan release.
-- `sw.js` har cacheidentifieraren `01115-stage3b-v1`; byt till unik RC-version vid produktionspaketering och verifiera uppdateringsbeteendet på samma origin.
+- [ ] HTML-titeln är fortfarande `LEXL – Träningslogg PWA 0.11.15 etapp 1 (utveckling)` trots RC1. GitHub-anslutningens `fetch_file` ger tomt innehåll för den stora `index.html` (Git-blobb `b519d9ec72aea36333db7cc75dc06922dd24cbf5`); ändra **inte** hela filen med en tom/trunkerad ersättning. Kräver säker fullständig filåtkomst före ändring.
+- [x] `sw.js`: cacheidentifieraren uppdaterad från `01115-stage3b-v1` till `01115-rc1-v1` på RC-grenen (commit `246e50fa0173f81598aae12874f21c376a33677e`). Uppdateringsbeteendet på samma origin är **inte ännu verifierat**.
+- [x] `manifest.webmanifest`: versionsfält uppdaterat från `0.11.14` till `0.11.15` på RC-grenen (commit `aa6b34f80200e0692ca9b467deed157276c9fbb5`).
 - `recovery-inspection.js` begränsar JSON till 20 MiB och ZIP till 128 MiB; kontrollera felmeddelanden och att stora säkerhetskopior inte leder till databortfall.
 - `recovery-activation.js` innehåller gammal kommentar `NOT WIRED TO THE APP UI` trots att den är ansluten; uppdatera dokumentation när implementationen slutverifierats.
+
+## RC1 kontroll efter versionsjusteringar
+- [x] `sw.js` omläst efter ändring: `CACHE = PREFIX + '01115-rc1-v1'`; den befintliga scope-avgränsade cachehanteringen har lämnats intakt.
+- [ ] Kontrollera övergång med redan aktiv 0.11.14-service worker och bevarade användardata på samma origin (inte testat).
+- [ ] Kontrollera HTML-titeln när full fil kan hanteras utan risk för förlust av innehåll.
+- [ ] PWA-installation, offlineuppdatering, tillgångar, säker lagring och regression är ännu inte slutgodkända.
 
 ## Releaseprincip
 Ingen automatisk merge, ingen ändring av `main` och ingen publicering på produktionsorigin innan samtliga blockerande kontroller är verifierade.
