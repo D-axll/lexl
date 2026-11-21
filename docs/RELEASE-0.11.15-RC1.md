@@ -37,5 +37,14 @@ Status: **under arbete, ej godkänd för main**. Releasegren: `release/0.11.15-r
 - [ ] Kontrollera HTML-titeln när full fil kan hanteras utan risk för förlust av innehåll.
 - [ ] PWA-installation, offlineuppdatering, tillgångar, säker lagring och regression är ännu inte slutgodkända.
 
+## Uppgraderingsgranskning från 0.11.14 (2026-11-21)
+- [x] Statisk granskning av `storage-session.js`, `storage-transition.js` och `docs/MIGRERING-OCH-ATERGANG.md`. Koden läser äldre `min-traning-v1` och återställningskälla, använder verifierad övergångsbackup, SHA-256, separat samtycke/aktivering och IndexedDB-kvitton. Det är en kodgranskning, **inte ett genomfört uppgraderingstest**.
+- [x] Jämförelse `main...release/0.11.15-rc1`: RC-grenen är 31 commits före `main` och 0 bakom vid granskningen. `index.html`, `sw.js` och `manifest.webmanifest` är ändrade; inga ändringar har gjorts på `main`.
+- [x] Bekräftad återgångsbegränsning: 0.11.14 läser äldre localStorage och visar inte nya IndexedDB-pass automatiskt. Separat verifierad återgångsexport krävs före nedgradering.
+- [ ] Kör verklig uppgradering från befintlig 0.11.14-service worker på samma origin med syntetiska träningsdata: bekräfta oförändrade pass/program/historik och oförändrad äldre localStorage, godkänn övergång, ladda om och jämför poster.
+- [ ] Kontrollera två flikar, avböjt samtycke, avbruten kopiering, offlineuppdatering och återgångsexport på samma origin.
+- [ ] Granska säkerhetsgrinden i den färdiga RC:n på Pixel 8 före produktionsbeslut. Undvik att testa med verkliga användardata utan separat verifierad extern backup.
+- [ ] Stor `index.html` kan ännu inte hämtas fullständigt genom GitHub-anslutningens filverktyg; HTML-titel och fullständigt byggpaket kvarstår.
+
 ## Releaseprincip
 Ingen automatisk merge, ingen ändring av `main` och ingen publicering på produktionsorigin innan samtliga blockerande kontroller är verifierade.
