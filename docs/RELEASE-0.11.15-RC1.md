@@ -16,13 +16,19 @@ Status: **under arbete, ej godkänd för main**. Releasegren: `release/0.11.15-r
 - `recovery-ui.js` och övriga återställningsmoduler finns på utvecklingsgrenen.
 
 ## Öppna releasegrindar
-- [ ] Verifiera att ordinarie `index.html` laddar alla återställningsmoduler och kopplar UI-kontrollerna korrekt (stor HTML-fil gick inte att hämta komplett i första GitHub-granskningen).
-- [ ] Granska att ingen syntetisk testpolicy, test-origin, testnamespace eller testseed följer med i den vanliga appen.
+- [x] Verifierat direkt från Git-blobb `b519d9ec72aea36333db7cc75dc06922dd24cbf5`: `index.html` laddar samtliga 10 externa lagrings-/återställningsskript och anropar `LEXLRecoveryUI.create` med `assertSafe`, `assertNoRecoveryDraft`, `onLock` och `onComplete`. Detta är statisk granskning, inte en körd webbläsarverifiering.
+- [x] Statisk kontroll av ordinarie `index.html`: ingen `LEXLRecoveryFilePolicy`, `synthetic-export-policy` eller 3D-origin finns där; den använder `min-traning-v1`. De separata 3C/3D-byggskripten finns endast på testgrenen. Fortsatt kontroll av hela releasepaketet behövs.
 - [ ] Kontrollera service worker/PWA-cache, versionsbeteende och migrering från befintlig 0.11.14 på samma origin.
 - [ ] Granska skydd för pågående pass, osparat arbete, samtidiga flikar, felaktiga filer och avbrutna transaktioner i den riktiga releasekandidaten.
 - [ ] Bygg reproducerbar RC från ren commit och dokumentera käll-SHA, filhashar och resultat. Tidigare syntetisk Cloudflare-beta är inte en produktions-RC.
 - [ ] Kort manuellt regressionstest av vanlig träning, program, historik, statistik, export och återställningsgrind.
 - [ ] Uttryckligt användargodkännande innan någon merge/publicering till `main`.
+
+## Nyupptäckta releasepunkter (2026-11-21)
+- HTML-titeln är fortfarande `LEXL – Träningslogg PWA 0.11.15 etapp 1 (utveckling)` trots RC1; uppdatera innan release.
+- `sw.js` har cacheidentifieraren `01115-stage3b-v1`; byt till unik RC-version vid produktionspaketering och verifiera uppdateringsbeteendet på samma origin.
+- `recovery-inspection.js` begränsar JSON till 20 MiB och ZIP till 128 MiB; kontrollera felmeddelanden och att stora säkerhetskopior inte leder till databortfall.
+- `recovery-activation.js` innehåller gammal kommentar `NOT WIRED TO THE APP UI` trots att den är ansluten; uppdatera dokumentation när implementationen slutverifierats.
 
 ## Releaseprincip
 Ingen automatisk merge, ingen ändring av `main` och ingen publicering på produktionsorigin innan samtliga blockerande kontroller är verifierade.
